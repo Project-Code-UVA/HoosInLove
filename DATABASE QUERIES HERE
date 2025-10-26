@@ -1,0 +1,38 @@
+CREATE TABLE preferences (
+    preferences_id SERIAL PRIMARY KEY,
+    gender_attraction VARCHAR(100),
+    relationship_type VARCHAR(100),
+    love_language TEXT,
+    lifestyle TEXT
+);
+
+CREATE TABLE user_relationship_types (
+    user_id INT,
+    relationship_type_id INT,
+    PRIMARY KEY (user_id, relationship_type_id),
+    FOREIGN KEY (user_id) REFERENCES user(user_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (relationship_type_id) REFERENCES relationship_types(relationship_type_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE user_lifestyles (
+    user_id INT,
+    lifestyle_id INT,
+    PRIMARY KEY (user_id, lifestyle_id),
+    FOREIGN KEY (user_id) REFERENCES user(user_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (lifestyle_id) REFERENCES lifestyles(lifestyle_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE user_love_languages (
+    user_id INT,
+    love_language_id INT,
+    PRIMARY KEY (user_id, love_language_id),
+    FOREIGN KEY (user_id) REFERENCES user(user_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (love_language_id) REFERENCES love_languages(love_language_id)
+        ON DELETE CASCADE
+);
+
