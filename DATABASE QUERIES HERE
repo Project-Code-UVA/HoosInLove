@@ -54,3 +54,19 @@ CREATE TABLE messages (
   "timestamp"  TIMESTAMP DEFAULT NOW(),
   read_at      TIMESTAMP
 );
+
+Alyssa:
+CREATE TABLE chat (
+  chat_id SERIAL PRIMARY KEY,
+  match_id INT NOT NULL REFERENCES matches(match_id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  is_friend BOOLEAN
+);
+
+CREATE TABLE matches (
+  match_id SERIAL PRIMARY KEY,
+  user1_id INT NOT NULL REFERENCES user(user_id) ON DELETE CASCADE,
+  user2_id INT NOT NULL REFERENCES user(user_id) ON DELETE CASCADE,
+  "status" VARCHAR(50),
+  matched_at TIMESTAMP DEFAULT NOW()
+);
