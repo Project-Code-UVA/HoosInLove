@@ -1,0 +1,56 @@
+Calli:
+CREATE TABLE swipes (
+  swipe_id SERIAL PRIMARY KEY,
+  swiper_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+  swiped_on_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+  swipe_type VARCHAR(20),
+  swiped_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE blocked (
+  block_id SERIAL PRIMARY KEY,
+  blocker_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+  blocked_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE reports (
+  report_id SERIAL PRIMARY KEY,
+  reporter_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+  reported_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+  reason TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  status VARCHAR(20)
+);
+
+CREATE TABLE pictures (
+  pictures_id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+  picture_type VARCHAR(20), -- 'profile' or 'gallery'
+  order_index INT,
+  uploaded_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE relationship_types (
+  relationship_type_id SERIAL PRIMARY KEY,
+  name VARCHAR(20)
+);
+
+CREATE TABLE lifestyles (
+  lifestyle_id SERIAL PRIMARY KEY,
+  name VARCHAR(20)
+);
+
+CREATE TABLE love_languages (
+  love_language_id SERIAL PRIMARY KEY,
+  name VARCHAR(20)
+);
+
+CREATE TABLE messages (
+  message_id   SERIAL PRIMARY KEY,
+  chat_id      INT NOT NULL REFERENCES chat(chat_id) ON DELETE CASCADE,
+  sender_id    INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  message_content TEXT NOT NULL,
+  "timestamp"  TIMESTAMP DEFAULT NOW(),
+  read_at      TIMESTAMP
+);
