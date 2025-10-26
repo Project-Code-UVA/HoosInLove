@@ -110,3 +110,21 @@ CREATE TABLE user_love_languages (
         ON DELETE CASCADE
 );
 
+Nafis:
+CREATE TABLE "user" (
+    user_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    bio TEXT,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    gender VARCHAR(20),
+    pronouns VARCHAR(20),
+    school_year TEXT,
+    age VARCHAR(100),
+    password VARCHAR(255) NOT NULL,
+    pictures_id INT,
+    preferences_id INT,
+    playlist TEXT,
+    account_status VARCHAR(100),
+    verification_status BOOLEAN DEFAULT FALSE
+);
