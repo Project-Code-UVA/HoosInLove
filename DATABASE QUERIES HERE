@@ -1,0 +1,130 @@
+Calli:
+CREATE TABLE swipes (
+  swipe_id SERIAL PRIMARY KEY,
+  swiper_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+  swiped_on_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+  swipe_type VARCHAR(20),
+  swiped_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE blocked (
+  block_id SERIAL PRIMARY KEY,
+  blocker_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+  blocked_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE reports (
+  report_id SERIAL PRIMARY KEY,
+  reporter_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+  reported_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+  reason TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  status VARCHAR(20)
+);
+
+CREATE TABLE pictures (
+  pictures_id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+  picture_type VARCHAR(20), -- 'profile' or 'gallery'
+  order_index INT,
+  uploaded_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE relationship_types (
+  relationship_type_id SERIAL PRIMARY KEY,
+  name VARCHAR(20)
+);
+
+CREATE TABLE lifestyles (
+  lifestyle_id SERIAL PRIMARY KEY,
+  name VARCHAR(20)
+);
+
+CREATE TABLE love_languages (
+  love_language_id SERIAL PRIMARY KEY,
+  name VARCHAR(20)
+);
+
+CREATE TABLE messages (
+  message_id   SERIAL PRIMARY KEY,
+  chat_id      INT NOT NULL REFERENCES chat(chat_id) ON DELETE CASCADE,
+  sender_id    INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  message_content TEXT NOT NULL,
+  "timestamp"  TIMESTAMP DEFAULT NOW(),
+  read_at      TIMESTAMP
+);
+
+Alyssa:
+CREATE TABLE chat (
+  chat_id SERIAL PRIMARY KEY,
+  match_id INT NOT NULL REFERENCES matches(match_id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  is_friend BOOLEAN
+);
+
+CREATE TABLE matches (
+  match_id SERIAL PRIMARY KEY,
+  user1_id INT NOT NULL REFERENCES user(user_id) ON DELETE CASCADE,
+  user2_id INT NOT NULL REFERENCES user(user_id) ON DELETE CASCADE,
+  "status" VARCHAR(50),
+  matched_at TIMESTAMP DEFAULT NOW()
+);
+
+Paul:
+CREATE TABLE preferences (
+    preferences_id SERIAL PRIMARY KEY,
+    gender_attraction VARCHAR(100),
+    relationship_type VARCHAR(100),
+    love_language TEXT,
+    lifestyle TEXT
+);
+
+CREATE TABLE user_relationship_types (
+    user_id INT,
+    relationship_type_id INT,
+    PRIMARY KEY (user_id, relationship_type_id),
+    FOREIGN KEY (user_id) REFERENCES user(user_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (relationship_type_id) REFERENCES relationship_types(relationship_type_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE user_lifestyles (
+    user_id INT,
+    lifestyle_id INT,
+    PRIMARY KEY (user_id, lifestyle_id),
+    FOREIGN KEY (user_id) REFERENCES user(user_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (lifestyle_id) REFERENCES lifestyles(lifestyle_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE user_love_languages (
+    user_id INT,
+    love_language_id INT,
+    PRIMARY KEY (user_id, love_language_id),
+    FOREIGN KEY (user_id) REFERENCES user(user_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (love_language_id) REFERENCES love_languages(love_language_id)
+        ON DELETE CASCADE
+);
+
+Nafis:
+CREATE TABLE "user" (
+    user_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    bio TEXT,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    gender VARCHAR(20),
+    pronouns VARCHAR(20),
+    school_year TEXT,
+    age VARCHAR(100),
+    password VARCHAR(255) NOT NULL,
+    pictures_id INT,
+    preferences_id INT,
+    playlist TEXT,
+    account_status VARCHAR(100),
+    verification_status BOOLEAN DEFAULT FALSE
+);
