@@ -1,0 +1,71 @@
+Notes on Data Privacy/Security
+
+
+Privacy Rules
+
+- when user interacts with app, is sending requests to database to display certain info
+	- w/o the right restrictions, anyone from anywhere could make requests to get data from database
+
+- identification verification -> verify authorized user is who's making request
+
+* accessing account info + pics -> account creator needs to be current user making request
+* account passwords -> hash them so can't be decrypted
+* accessing chats -> sender/receiver needs to be current user making request
+
+
+** encrypt all sensitive user data (passwords, pictures, chats, etc)
+
+
+securing chat messages 
+- https://en.wikipedia.org/wiki/Signal_Protocol?useskin=vector (End-to-end encryption)
+	-  perhaps use https://github.com/signalapp/libsignal 
+- Server Side Encryption (SSE) a lot easier to implement but less secure than E2EE
+
+securing passwords: don't store plaintext, use password hashing algo (like argon2id)
+
+checking authorization: UVA email verification + Duo Mobile maybe
+
+Server Side Encryption might be best over E2EE b/c simpler implementation
+- store messages/photos encrypted at rest using server-side encryption with least-privilege IAM roles
+    * least-privilege: every component, service, & user has ONLY min permissions necessary for job (nothing more)
+- short-lived presigned URLs for uploads/downloads & store metadata separate from content
+- implement content moderation pipelines (human review with strict access controls)
+	PROS: simpler moderation & recovery
+	CONS: server can read server content so worse privacy
+
+
+Implementation Steps:
+
+1) Authentication + Account Security
+	- hash passwords w argon2id
+		* argon2id info: https://en.wikipedia.org/wiki/Argon2
+	- email verification + password reset tokens (single-use & expire quickly)
+	- support WebAuthn for 2FA (maybe)
+2) API Security
+	- enforce HTTPS w HSTS (redirects HTTP -> HTTPS)
+	- (perchance) use Transport Layer Security (TLS) 1.3, strong cipher suites
+		* encrypts communication between web apps & servers (also can be used for messaging)
+	- validate inputs server-side to avoid injection attacks
+	 	* implement secure API headers (if sharing backend with web)
+3) Storage for images & other media
+	- private bucket (no public read)
+	- Server Side Encryption with Key Management Service
+		* secure transmittance of data to server, then encrypted as written to server storage
+	- use short lived signed URLs for uploads & downloads
+	- validate file types & scan images on upload
+4) Chats
+	- stored at rest on server, decrypted by server as needed
+5) Key management
+	- generate key pairs on device, store private keys in secure keystore
+	- publish public keys to server so other clients can fetch them to encrypt messages
+6) Abuse, moderation, & reporting
+	- client-side ML to detect high-risk content and ask user to confirm sending (might be too much work, but if we have time, might be worth looking into)
+	- for manual report checking, maintain strict access controls & audit logs for moderators
+7) logging, monitoring, incident response
+	- log abnormal behavior & authorization failures
+	- have incident response plan (might not have to worry too much about this since will have fairly small user base)
+
+
+
+Other Stuff to Note/Look into
+- privacy policy explaining what data's stored, how long it's kept, & how users can delete their data
