@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 
 export type ChatItemProps = {
   id: number;
@@ -9,12 +9,38 @@ export type ChatItemProps = {
   onPress?: () => void;
 };
 
+// Shared avatar component for consistency across screens
+export function Avatar({ name, size = 50 }: { name: string; size?: number }) {
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: '#C2E3FF',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Text
+        style={{
+          color: '#002561',
+          fontSize: size * 0.4,
+          fontWeight: 'bold',
+        }}
+      >
+        {name.charAt(0).toUpperCase()}
+      </Text>
+    </View>
+  );
+}
+
 export default function ChatItem({ name, message, isFriend, onPress }: ChatItemProps) {
   return (
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
-      {/* Profile Picture Placeholder */}
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{name.charAt(0)}</Text>
+      {/* Profile Picture */}
+      <View style={styles.avatarWrapper}>
+        <Avatar name={name} size={50} />
       </View>
 
       {/* Chat Info */}
@@ -49,19 +75,8 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#C2E3FF',
-    alignItems: 'center',
-    justifyContent: 'center',
+  avatarWrapper: {
     marginRight: 12,
-  },
-  avatarText: {
-    color: '#002561',
-    fontSize: 20,
-    fontWeight: 'bold',
   },
   chatInfo: {
     flex: 1,

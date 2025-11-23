@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import ChatItem, { ChatItemProps } from '../../components/ChatItem';
 import Header from '../../components/header';
 import Footer from '../../components/footer';
@@ -44,6 +45,8 @@ const chatData: ChatItemProps[] = [
 ];
 
 export default function Chats() {
+  const navigation = useNavigation();
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -66,7 +69,7 @@ export default function Chats() {
             <ChatItem
               key={chat.id}
               {...chat}
-              onPress={() => console.log(`Pressed chat with ${chat.name}`)}
+              onPress={() => (navigation as any).navigate('InsideChat', { name: chat.name })}
             />
           ))}
         </ScrollView>
