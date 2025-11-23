@@ -6,6 +6,10 @@ import BaseScreen from './screens/BaseScreen';
 import LoginScreen from './screens/LoginScreen';
 
 // NEW SCREENS — now inside CreateAnAccount Screens
+import CreateAccountScreen from './screens/CreateAnAccountScreens/CreateAccountScreen';
+import VerifyEmailScreen from './screens/CreateAnAccountScreens/VerifyEmailScreen';
+import AppPoliciesNoticeScreen from './screens/CreateAnAccountScreens/AppPoliciesNoticeScreen';
+import AddPhotosScreen from './screens/CreateAnAccountScreens/AddPhotoScreen';
 import DatingPreferences1 from './screens/CreateAnAccountScreens/DatingPreferences1';
 import DatingPreferences2 from './screens/CreateAnAccountScreens/DatingPreferences2';
 import DatingPreferences3 from './screens/CreateAnAccountScreens/DatingPreferences3';
@@ -14,7 +18,10 @@ import FinishProfile from './screens/CreateAnAccountScreens/FinishProfile';
 export type RootStackParamList = {
   BaseScreen: undefined;
   LoginScreen: undefined;
-
+  CreateAccount: undefined;
+  VerifyEmail: { email: string };
+  AppPoliciesNotice: undefined;
+  AddPhotos: undefined;
   DatingPreferences1: undefined;
   DatingPreferences2: undefined;
   DatingPreferences3: undefined;
@@ -33,6 +40,18 @@ export default function AppNavigator() {
       <Stack.Screen name="LoginScreen" component={LoginScreen} />
 
       {/* CREATE ACCOUNT FLOW */}
+      <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
+      <Stack.Screen 
+        name="VerifyEmail" 
+        component={VerifyEmailScreen} 
+        options={{ 
+          presentation: 'modal', 
+        }} 
+      /> 
+      {/* APP POLICIES & ADD PHOTOS */}
+      <Stack.Screen name="AppPoliciesNotice" component={AppPoliciesNoticeScreen} />
+      <Stack.Screen name="AddPhotos" component={AddPhotosScreen} />
+      {/* DATING PREFERENCES & FINISH PROFILE */}
       <Stack.Screen name="DatingPreferences1" component={DatingPreferences1} />
       <Stack.Screen name="DatingPreferences2" component={DatingPreferences2} />
       <Stack.Screen name="DatingPreferences3" component={DatingPreferences3} />
