@@ -15,6 +15,10 @@ import DatingPreferences2 from './screens/CreateAnAccountScreens/DatingPreferenc
 import DatingPreferences3 from './screens/CreateAnAccountScreens/DatingPreferences3';
 import FinishProfile from './screens/CreateAnAccountScreens/FinishProfile';
 
+// CHAT SCREENS
+import Chats from './screens/ChatScreens/Chats';
+import InsideChat from './screens/ChatScreens/InsideChat';
+
 export type RootStackParamList = {
   BaseScreen: undefined;
   LoginScreen: undefined;
@@ -26,6 +30,9 @@ export type RootStackParamList = {
   DatingPreferences2: undefined;
   DatingPreferences3: undefined;
   FinishProfile: undefined;
+
+  Chats: undefined;
+  InsideChat: { name: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -56,6 +63,9 @@ export default function AppNavigator() {
       <Stack.Screen name="DatingPreferences2" component={DatingPreferences2} />
       <Stack.Screen name="DatingPreferences3" component={DatingPreferences3} />
       <Stack.Screen name="FinishProfile" component={FinishProfile} />
+
+      <Stack.Screen name="Chats" component={Chats} />
+      <Stack.Screen name="InsideChat" component={InsideChat} />
 
     </Stack.Navigator>
   );
