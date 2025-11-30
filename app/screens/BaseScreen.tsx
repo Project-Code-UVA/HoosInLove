@@ -20,6 +20,11 @@ export default function BaseScreen() {
         <TouchableOpacity onPress={() => navigation.navigate('LoginScreen')}>
           <Text style={styles.loginLink}>Go to Login</Text>
         </TouchableOpacity>
+
+        {/* Create an Account*/}
+        <TouchableOpacity onPress={() => navigation.navigate('CreateAccount')}>
+          <Text style={styles.loginLink}>Create an Account</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Footer */}

@@ -1,18 +1,24 @@
-import { useNavigation } from '@react-navigation/native';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import AccountIcon from './footercomponents/accountIcon';
 import ChatIcon from './footercomponents/chatIcon';
 import HeartIcon from './footercomponents/heartIcon';
 
+type RootStackParamList = {
+  Chats: undefined;
+  BaseScreen: undefined;
+  ViewProfile: { profile: any | null };
+};
+
 export default function Footer() {
-  const nav = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   return (
     <View style={styles.wrap}>
       <TouchableOpacity
         style={styles.iconButton}
-        onPress={() => nav.navigate('Messages' as never)}
+        onPress={() => {navigation.navigate('Chats')}}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <ChatIcon height={30.5} />
@@ -20,7 +26,7 @@ export default function Footer() {
 
       <TouchableOpacity
         style={[styles.iconButton, styles.centerIcon]}
-        onPress={() => nav.navigate('Matches' as never)}
+        onPress={() => navigation.navigate('BaseScreen')}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <HeartIcon size={43} />
@@ -28,7 +34,7 @@ export default function Footer() {
 
       <TouchableOpacity
         style={styles.iconButton}
-        onPress={() => nav.navigate('Profile' as never)}
+        onPress={() => navigation.navigate('ViewProfile', { profile: null })}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <AccountIcon size={22} />

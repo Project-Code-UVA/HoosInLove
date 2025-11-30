@@ -1,15 +1,19 @@
 // app/screens/ViewProfile.tsx
 import React from 'react';
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
+import { RouteProp } from '@react-navigation/native';
+import { RootStackParamList } from '../AppNavigator';
 import PrettyBackground from '../components/PrettyBackground';
+
+type ViewProfileRouteProp = RouteProp<RootStackParamList, 'ViewProfile'>;
 
 interface ProfileData {
   name: string;
@@ -30,7 +34,7 @@ interface ProfileScreenProps {
   profile: ProfileData;
 }
 
-const ProfileScreen: React.FC<ProfileScreenProps> = ({ profile }) => {
+const ViewProfile: React.FC<ProfileScreenProps> = ({ profile }) => {
   return (
     <PrettyBackground>
       <ScrollView contentContainerStyle={styles.container}>
@@ -280,4 +284,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ProfileScreen;
+export default ViewProfile;

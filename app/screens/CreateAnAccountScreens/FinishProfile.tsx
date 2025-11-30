@@ -1,21 +1,25 @@
 // app/screens/FinishProfile.tsx
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import type { RootStackParamList } from '../../AppNavigator';
 import EditPictureModal from '../../components/EditPictureModal';
 import PrettyBackground from '../../components/PrettyBackground';
-
+type Nav = NativeStackNavigationProp<RootStackParamList, 'FinishProfile'>;
 const FinishProfile: React.FC = () => {
   const [bio, setBio] = useState('');
   const [playlistLink, setPlaylistLink] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const navigation = useNavigation<Nav>();
 
   return (
     <PrettyBackground>
@@ -28,7 +32,7 @@ const FinishProfile: React.FC = () => {
           <View style={styles.picRow}>
             <View style={styles.picHolder}>
               <Image
-                source={require('../assets/images/profile-placeholder.png')}
+                //source={require('../assets/images/favicon.png')}
                 style={styles.picImg}
               />
             </View>
@@ -76,6 +80,7 @@ const FinishProfile: React.FC = () => {
             onPress={() => {
               // later: submit to DB + navigate to main app
               console.log('Finish profile!');
+              navigation.navigate('BaseScreen');
             }}
           >
             <Text style={styles.continueText}>Enter the Lawn of Love</Text>

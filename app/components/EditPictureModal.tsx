@@ -1,11 +1,11 @@
 import React from 'react';
 import {
-    Image,
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Image,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 interface EditPictureModalProps {
@@ -29,7 +29,7 @@ export default function EditPictureModal({ visible, onClose }: EditPictureModalP
           {/* Circular image container */}
           <View style={styles.imageWrapper}>
             <Image
-              source={require('../assets/images/profile-placeholder.png')}
+              //source={require('../assets/images/profile-placeholder.png')}
               style={styles.imageIcon}
             />
           </View>

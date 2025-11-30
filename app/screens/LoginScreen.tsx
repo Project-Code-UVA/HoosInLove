@@ -1,17 +1,26 @@
 // screens/LoginScreen.tsx
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 import React from 'react';
 import {
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import PrettyBackground from '../components/PrettyBackground';
 
+// Replace this with your actual stack param list
+type RootStackParamList = {
+  LoginScreen: undefined;
+  BaseScreen: undefined;
+};
+
 const LoginScreen: React.FC = () => {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   return (
     <PrettyBackground>
       <KeyboardAvoidingView
@@ -35,7 +44,7 @@ const LoginScreen: React.FC = () => {
             secureTextEntry
           />
 
-          <TouchableOpacity style={styles.loginBtn}>
+          <TouchableOpacity style={styles.loginBtn} onPress={() => {navigation.navigate('BaseScreen')}}>
             <Text style={styles.loginText}>Login</Text>
           </TouchableOpacity>
 

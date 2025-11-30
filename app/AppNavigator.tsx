@@ -6,18 +6,19 @@ import BaseScreen from './screens/BaseScreen';
 import LoginScreen from './screens/LoginScreen';
 
 // NEW SCREENS — now inside CreateAnAccount Screens
-import CreateAccountScreen from './screens/CreateAnAccountScreens/CreateAccountScreen';
-import VerifyEmailScreen from './screens/CreateAnAccountScreens/VerifyEmailScreen';
-import AppPoliciesNoticeScreen from './screens/CreateAnAccountScreens/AppPoliciesNoticeScreen';
 import AddPhotosScreen from './screens/CreateAnAccountScreens/AddPhotoScreen';
+import AppPoliciesNoticeScreen from './screens/CreateAnAccountScreens/AppPoliciesNoticeScreen';
+import CreateAccountScreen from './screens/CreateAnAccountScreens/CreateAccountScreen';
 import DatingPreferences1 from './screens/CreateAnAccountScreens/DatingPreferences1';
 import DatingPreferences2 from './screens/CreateAnAccountScreens/DatingPreferences2';
 import DatingPreferences3 from './screens/CreateAnAccountScreens/DatingPreferences3';
 import FinishProfile from './screens/CreateAnAccountScreens/FinishProfile';
+import VerifyEmailScreen from './screens/CreateAnAccountScreens/VerifyEmailScreen';
 
 // CHAT SCREENS
 import Chats from './screens/ChatScreens/Chats';
 import InsideChat from './screens/ChatScreens/InsideChat';
+
 
 export type RootStackParamList = {
   BaseScreen: undefined;
@@ -33,6 +34,7 @@ export type RootStackParamList = {
 
   Chats: undefined;
   InsideChat: { name: string };
+  ViewProfile: { profile: any };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -66,6 +68,8 @@ export default function AppNavigator() {
 
       <Stack.Screen name="Chats" component={Chats} />
       <Stack.Screen name="InsideChat" component={InsideChat} />
+
+      {/* <Stack.Screen name="ViewProfile" component={ViewProfile}/> */}
 
     </Stack.Navigator>
   );
