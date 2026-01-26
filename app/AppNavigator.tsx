@@ -19,6 +19,12 @@ import VerifyEmailScreen from './screens/CreateAnAccountScreens/VerifyEmailScree
 import Chats from './screens/ChatScreens/Chats';
 import InsideChat from './screens/ChatScreens/InsideChat';
 
+// SWIPE PAGE SCREENS
+import SwipeHome from './screens/SwipePageScreens/SwipeHome';
+
+// PROFILE SCREEN
+//import ProfileScreen from "./screens/ProfileScreen/ProfileScreen";
+
 
 export type RootStackParamList = {
   BaseScreen: undefined;
@@ -34,7 +40,9 @@ export type RootStackParamList = {
 
   Chats: undefined;
   InsideChat: { name: string };
-  ViewProfile: { profile: any };
+
+  ViewProfile: { profile: any | null };
+
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -45,8 +53,11 @@ export default function AppNavigator() {
       initialRouteName="BaseScreen"
       screenOptions={{ headerShown: false }}
     >
-      <Stack.Screen name="BaseScreen" component={BaseScreen} />
+      <Stack.Screen name="BaseScreen" component={SwipeHome} />
       <Stack.Screen name="LoginScreen" component={LoginScreen} />
+
+      {/* PROFILE SCREEN (currently temp screen placeholder) */}
+      <Stack.Screen name="ViewProfile" component={BaseScreen} /> 
 
       {/* CREATE ACCOUNT FLOW */}
       <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
