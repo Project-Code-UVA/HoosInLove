@@ -1,5 +1,5 @@
 // app/screens/SwipePageScreens/SwipeHome.tsx
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Dimensions, Image, StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -29,25 +29,23 @@ const MAIN_DOOR_CENTER = 0.5;
 
 const DOOR_W = 210;
 const DOOR_H = 320;
+const DOOR_TOP = 250;
 
-/* 🔽 move the whole background down */
-const BG_Y_OFFSET = 40;
+/* move the whole background down */
+const BG_Y_OFFSET = 30;
 
 /* -------------------- INTERACTION -------------------- */
 
-const MAX_PULL_FRAC = 0.14;           // how far into wall you can pull
-const COMPLETE_THRESHOLD = 0.94;      // how full bar must be to commit
+const MAX_PULL_FRAC = 0.14;
+const COMPLETE_THRESHOLD = 0.94;
 
 const SNAP_CFG = { damping: 22, stiffness: 210 };
 const COMMIT_MS = 380;
 const COMMIT_EASE = Easing.out(Easing.cubic);
 
-const LABEL_DEADZONE = 10;
-
 /* spring pull curve */
 const SPRING_K = 0.020;
 
-type SwipeLabel = "" | "lefty" | "righty";
 type BarDir = "ltr" | "rtl";
 
 export default function SwipeHome() {
@@ -55,9 +53,19 @@ export default function SwipeHome() {
   const n = profiles.length;
 
   const [index, setIndex] = useState(0);
-  const [swipeLabel, setSwipeLabel] = useState<SwipeLabel>("");
+
+  // swipe progress bar (the loading/hold bar, NOT the navy handle)
   const [barDir, setBarDir] = useState<BarDir>("ltr");
-  const [showBar, setShowBar] = useState(false);
+  const [showSwipeBar, setShowSwipeBar] = useState(false);
+
+  // door “open/zoomed” state (bubble becomes draggable here)
+  const [isOpen, setIsOpen] = useState(false);
+
+  // measure footer height so bubble sits perfectly above it
+  const [footerH, setFooterH] = useState(0);
+  const BUBBLE_GAP = 28;
+  const bubbleBottom = footerH + BUBBLE_GAP;
+  const holdBarBottom = footerH + 6;
 
   const profile = profiles[index % n];
 
@@ -74,7 +82,6 @@ export default function SwipeHome() {
   const scaledW = baseW * EXTRA_ZOOM;
   const scaledH = baseH * EXTRA_ZOOM;
 
-  // ⬇️ defined ONCE
   const BG_TOP = (H - scaledH) / 2 + BG_Y_OFFSET;
 
   const initialX = W / 2 - scaledW * MAIN_DOOR_CENTER;
@@ -88,9 +95,13 @@ export default function SwipeHome() {
   const isCommitting = useSharedValue(false);
   const dragProgress = useSharedValue(0);
 
-  const showBarSV = useSharedValue<0 | 1>(0);
+  const showSwipeBarSV = useSharedValue<0 | 1>(0);
   const barDirSV = useSharedValue<0 | 1>(0);
-  const lastLabel = useSharedValue<0 | 1 | 2>(0);
+
+  // zoom animation values
+  const zoomScale = useSharedValue(1);
+  const zoomTx = useSharedValue(0);
+  const zoomTy = useSharedValue(0);
 
   /* -------------------- HELPERS -------------------- */
 
@@ -114,10 +125,58 @@ export default function SwipeHome() {
     });
   };
 
+  /* -------------------- ZOOM TARGET -------------------- */
+  // Door rect on screen (DoorCurrent page when translateX === 0)
+  const doorCenterX = initialX + doorLeft + DOOR_W / 2;
+  const doorCenterY = BG_TOP + DOOR_TOP + DOOR_H / 2;
+
+  // Scale so the door basically fills the screen
+  const targetScale = Math.min(W / DOOR_W, H / DOOR_H) * 1.02;
+
+  // RN scales around center by default
+  const originX = W / 2;
+  const originY = H / 2 - 25;
+
+  // center-origin translation
+  const targetTx = targetScale * (originX - doorCenterX);
+  const targetTy = targetScale * (originY - doorCenterY);
+
+  useEffect(() => {
+    // when opening: snap carousel to center and hide swipe progress bar
+    if (isOpen) {
+      translateX.value = withSpring(0, SNAP_CFG);
+      dragProgress.value = withTiming(0, { duration: 120 });
+      showSwipeBarSV.value = 0;
+      setShowSwipeBar(false);
+    }
+
+    zoomScale.value = withTiming(isOpen ? targetScale : 1, {
+      duration: isOpen ? 360 : 240,
+      easing: COMMIT_EASE,
+    });
+    zoomTx.value = withTiming(isOpen ? targetTx : 0, {
+      duration: isOpen ? 360 : 240,
+      easing: COMMIT_EASE,
+    });
+    zoomTy.value = withTiming(isOpen ? targetTy : 0, {
+      duration: isOpen ? 360 : 240,
+      easing: COMMIT_EASE,
+    });
+  }, [isOpen, targetScale, targetTx, targetTy]);
+
   /* -------------------- STYLES -------------------- */
 
   const stripStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
+  }));
+
+  // whole scene zooms when isOpen
+  const sceneZoomStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: zoomScale.value },
+      { translateX: zoomTx.value },
+      { translateY: zoomTy.value },
+    ],
   }));
 
   const artOffsetStyle = useMemo(
@@ -136,10 +195,8 @@ export default function SwipeHome() {
 
     isCommitting.value = true;
 
-    lastLabel.value = 0;
-    showBarSV.value = 0;
-    runOnJS(setSwipeLabel)("");
-    runOnJS(setShowBar)(false);
+    showSwipeBarSV.value = 0;
+    runOnJS(setShowSwipeBar)(false);
 
     translateX.value = withTiming(
       dir * 2 * W,
@@ -153,17 +210,18 @@ export default function SwipeHome() {
     );
   };
 
-  /* -------------------- GESTURE -------------------- */
+  /* -------------------- GESTURES -------------------- */
 
+  // Horizontal swipe (carousel)
   const pan = Gesture.Pan()
+    .enabled(!isOpen)
     .minDistance(6)
+    .activeOffsetY([-12, 12]) // ignore vertical drift
     .onBegin(() => {
       if (isCommitting.value) return;
       dragProgress.value = 0;
-      showBarSV.value = 0;
-      runOnJS(setShowBar)(false);
-      lastLabel.value = 0;
-      runOnJS(setSwipeLabel)("");
+      showSwipeBarSV.value = 0;
+      runOnJS(setShowSwipeBar)(false);
     })
     .onUpdate((e) => {
       if (isCommitting.value) return;
@@ -180,9 +238,9 @@ export default function SwipeHome() {
       const p = clamp01(Math.abs(tx) / MAX_PULL);
       dragProgress.value = p;
 
-      if (p > 0.01 && !showBarSV.value) {
-        showBarSV.value = 1;
-        runOnJS(setShowBar)(true);
+      if (p > 0.01 && !showSwipeBarSV.value) {
+        showSwipeBarSV.value = 1;
+        runOnJS(setShowSwipeBar)(true);
       }
 
       if (p >= COMPLETE_THRESHOLD) {
@@ -193,91 +251,149 @@ export default function SwipeHome() {
     .onEnd(() => {
       if (isCommitting.value) return;
 
-      showBarSV.value = 0;
-      runOnJS(setShowBar)(false);
+      showSwipeBarSV.value = 0;
+      runOnJS(setShowSwipeBar)(false);
 
       translateX.value = withSpring(0, SNAP_CFG);
       dragProgress.value = withTiming(0, { duration: 120 });
     });
+
+  // door hit-test (worklet-safe)
+  const isPointInDoor = (x: number, y: number) => {
+    "worklet";
+    return (
+      x >= doorLeft &&
+      x <= doorLeft + DOOR_W &&
+      y >= DOOR_TOP &&
+      y <= DOOR_TOP + DOOR_H
+    );
+  };
+
+  // Double tap on the door → open
+  const doorDoubleTap = Gesture.Tap()
+    .enabled(!isOpen)
+    .numberOfTaps(2)
+    .maxDelay(250)
+    .onStart((e) => {
+      if (isPointInDoor(e.x, e.y)) {
+        runOnJS(setIsOpen)(true);
+      }
+    });
+
+  // Vertical swipe DOWN to close (anywhere)
+  const closePan = Gesture.Pan()
+    .enabled(isOpen)
+    .minDistance(10)
+    .activeOffsetX([-20, 20]) // ignore sideways
+    .activeOffsetY([10, 9999]) // only activates if user moves DOWN
+    .onEnd((e) => {
+      if (e.translationY > 70 || e.velocityY > 900) {
+        runOnJS(setIsOpen)(false);
+      }
+    });
+
+  // When closed: both pan + double tap can run; tap won't interfere with pan
+  const closedGesture = Gesture.Simultaneous(pan, doorDoubleTap);
 
   /* -------------------- RENDER -------------------- */
 
   return (
     <View style={styles.screen}>
       <View style={styles.viewport}>
-        <GestureDetector gesture={pan}>
-          <View style={StyleSheet.absoluteFill}>
-            <Animated.View style={[styles.strip, stripStyle]} pointerEvents="none">
-
+        <GestureDetector gesture={isOpen ? closePan : closedGesture}>
+          <Animated.View style={[StyleSheet.absoluteFill, sceneZoomStyle]}>
+            <Animated.View style={[styles.strip, stripStyle]}>
               {/* DoorPrev */}
               <View style={[styles.page, { left: -2 * W }]}>
                 <View style={artOffsetStyle}>
-                  <Image source={DOOR_BG} resizeMode="stretch"
-                    style={[styles.bgImg, { width: scaledW, height: scaledH, top: BG_TOP }]} />
-                  <View style={[styles.doorPlaceholder, { left: doorLeft }]} />
+                  <Image
+                    source={DOOR_BG}
+                    resizeMode="stretch"
+                    style={[styles.bgImg, { width: scaledW, height: scaledH, top: BG_TOP }]}
+                  />
                 </View>
               </View>
 
               {/* WallPrev */}
               <View style={[styles.page, { left: -W }]}>
                 <View style={artOffsetStyle}>
-                  <Image source={WALL_BG} resizeMode="stretch"
-                    style={[styles.bgImg, { width: scaledW, height: scaledH, top: BG_TOP }]} />
+                  <Image
+                    source={WALL_BG}
+                    resizeMode="stretch"
+                    style={[styles.bgImg, { width: scaledW, height: scaledH, top: BG_TOP }]}
+                  />
                 </View>
               </View>
 
               {/* DoorCurrent */}
               <View style={[styles.page, { left: 0 }]}>
                 <View style={artOffsetStyle}>
-                  <Image source={DOOR_BG} resizeMode="stretch"
-                    style={[styles.bgImg, { width: scaledW, height: scaledH, top: BG_TOP }]} />
-                  <View style={[styles.doorPlaceholder, { left: doorLeft }]} />
+                  <Image
+                    source={DOOR_BG}
+                    resizeMode="stretch"
+                    style={[styles.bgImg, { width: scaledW, height: scaledH, top: BG_TOP }]}
+                  />
+                  {/* ✅ no Pressable door zone */}
                 </View>
               </View>
 
               {/* WallNext */}
               <View style={[styles.page, { left: W }]}>
                 <View style={artOffsetStyle}>
-                  <Image source={WALL_BG} resizeMode="stretch"
-                    style={[styles.bgImg, { width: scaledW, height: scaledH, top: BG_TOP }]} />
+                  <Image
+                    source={WALL_BG}
+                    resizeMode="stretch"
+                    style={[styles.bgImg, { width: scaledW, height: scaledH, top: BG_TOP }]}
+                  />
                 </View>
               </View>
 
               {/* DoorNext */}
               <View style={[styles.page, { left: 2 * W }]}>
                 <View style={artOffsetStyle}>
-                  <Image source={DOOR_BG} resizeMode="stretch"
-                    style={[styles.bgImg, { width: scaledW, height: scaledH, top: BG_TOP }]} />
-                  <View style={[styles.doorPlaceholder, { left: doorLeft }]} />
+                  <Image
+                    source={DOOR_BG}
+                    resizeMode="stretch"
+                    style={[styles.bgImg, { width: scaledW, height: scaledH, top: BG_TOP }]}
+                  />
                 </View>
               </View>
-
             </Animated.View>
-          </View>
+          </Animated.View>
         </GestureDetector>
       </View>
 
       {/* Info Bubble */}
-      <View style={styles.overlay}>
-        <View style={styles.infoBubbleWrap}>
-          <InfoBubble {...profile} />
+      <View style={styles.overlay} pointerEvents="box-none">
+        <View style={[styles.infoBubbleWrap, { bottom: bubbleBottom }]} pointerEvents="auto">
+          <InfoBubble
+            profile={{
+              name: profile.name,
+              age: profile.age,
+              yearLabel: profile.yearLabel,
+              quote: profile.quote,
+              photoUri: (profile as any).photoUri,
+            }}
+            expandEnabled={isOpen}
+            showHandle={isOpen}
+          />
         </View>
       </View>
 
-      {showBar && (
-        <View style={styles.holdBarWrap}>
+      {/* Swipe progress bar — only during swipe and only when NOT open */}
+      {showSwipeBar && !isOpen && (
+        <View style={[styles.holdBarWrap, { bottom: holdBarBottom }]} pointerEvents="none">
           <ProgressBar progress={dragProgress} direction={barDir} />
         </View>
       )}
 
-      <View style={styles.footerFixed}>
+      {/* Footer */}
+      <View style={styles.footerFixed} onLayout={(e) => setFooterH(e.nativeEvent.layout.height)}>
         <Footer />
       </View>
     </View>
   );
 }
-
-/* -------------------- STYLES -------------------- */
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#FFF5DB" },
@@ -288,17 +404,13 @@ const styles = StyleSheet.create({
 
   bgImg: { position: "absolute", left: 0 },
 
-  doorPlaceholder: {
-    position: "absolute",
-    top: 250,
-    width: DOOR_W,
-    height: DOOR_H,
-    borderRadius: 14,
-    backgroundColor: "rgba(0,0,0,0.09)",
-  },
-
   overlay: { ...StyleSheet.absoluteFillObject },
-  infoBubbleWrap: { position: "absolute", bottom: 110, left: 18, right: 18 },
-  holdBarWrap: { position: "absolute", bottom: 86, left: 0, right: 0 },
+
+  // bubble placement (bottom injected inline)
+  infoBubbleWrap: { position: "absolute", left: 13, right: 13 },
+
+  // progress bar placement (bottom injected inline)
+  holdBarWrap: { position: "absolute", left: 0, right: 0 },
+
   footerFixed: { position: "absolute", bottom: 0, left: 0, right: 0 },
 });
