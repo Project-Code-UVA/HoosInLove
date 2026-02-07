@@ -1,6 +1,6 @@
 // app/screens/SwipePageScreens/SwipeHome.tsx
-import React, { useMemo, useState } from "react";
-import { Dimensions, Image, StyleSheet, View, Text } from "react-native";
+import React, { useState } from "react";
+import { Dimensions, Image, StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
@@ -8,10 +8,13 @@ import Animated, {
   useSharedValue,
   withSpring,
   withTiming,
+  Easing,
 } from "react-native-reanimated";
 
 import Footer from "../../components/footer";
 import ProgressBar from "../../components/Swipepage/BottomProgressBar";
+import InfoBubble from "../../components/Swipepage/InfoBubble";
+import { MOCK_PROFILES } from "../../data/mockProfiles";
 
 const { width: W, height: H } = Dimensions.get("window");
 
@@ -32,21 +35,41 @@ const DOOR_W = 210;
 const DOOR_H = 320;
 
 // Feel (bouncyness) of snap back to center
-const SNAP_CFG = { damping: 30, stiffness: 180 };
-const COMMIT_OUT_MS = 160;
+const SNAP_CFG = { damping: 40, stiffness: 35 };
+const COMMIT_OUT_MS = 420;
+const COMMIT_IN_MS  = 650; 
 const LABEL_DEADZONE = 10;
+const COMPLETE_THRESHOLD = 0.98; // 98% swipe = count as “complete”
+
+// Smaller = less sensitive (needs more effort).
+const DRAG_SENSITIVITY = 0.55; // try 0.35–0.70
+
+const COMMIT_EASE = Easing.out(Easing.cubic);
 
 type SwipeLabel = "" | "lefty" | "righty";
 type BarDir = "ltr" | "rtl";
 
 export default function SwipeHome() {
-  const profiles = useMemo(() => [{ id: "1" }, { id: "2" }, { id: "3" }], []);
   const [index, setIndex] = useState(0);
-  const hasNext = index < profiles.length - 1;
+  const [displayIndex, setDisplayIndex] = useState(0);
+  
 
   const [swipeLabel, setSwipeLabel] = useState<SwipeLabel>("");
   const [barDir, setBarDir] = useState<BarDir>("ltr");
   const [showBar, setShowBar] = useState(false);
+
+  const profiles = MOCK_PROFILES;
+  const profile = profiles[displayIndex] ?? profiles[0];
+  const hasNext = displayIndex < profiles.length - 1;
+  if (!profile) return null;
+
+  const bumpIndex = () => {
+    setIndex((prev) => Math.min(prev + 1, profiles.length - 1));
+  };
+
+  const bumpDisplayIndex = () => {
+    setDisplayIndex((prev) => Math.min(prev + 1, profiles.length - 1));
+  };
 
   // Use intrinsic image size (bundled asset)
   const src = Image.resolveAssetSource(BG_SOURCE);
@@ -76,6 +99,9 @@ export default function SwipeHome() {
   const bgX = useSharedValue(initialX);
   const startX = useSharedValue(initialX);
   const dragProgress = useSharedValue(0);
+  const isTransitioning = useSharedValue(false);
+  const nextX = useSharedValue(initialX);
+  const nextVisible = useSharedValue(0); // 0 hidden, 1 visible
 
   const lastLabel = useSharedValue<0 | 1 | 2>(0);
 
@@ -98,9 +124,15 @@ export default function SwipeHome() {
   const dragLayerStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: bgX.value }],
   }));
+  const nextLayerStyle = useAnimatedStyle(() => ({
+  opacity: nextVisible.value,
+  transform: [{ translateX: nextX.value }],
+  }));
 
   const pan = Gesture.Pan()
+    .minDistance(12) 
     .onBegin(() => {
+      if (isTransitioning.value) return;
       startX.value = bgX.value;
       dragProgress.value = 0;
 
@@ -116,29 +148,29 @@ export default function SwipeHome() {
       lastLabel.value = 0;
       runOnJS(setSwipeLabel)("");
     })
-    .onUpdate((e) => {
-      // update position with clamp
-      const nextX = clamp(startX.value + e.translationX, minX, maxX);
-      bgX.value = nextX;
 
-      // direction:
-      // drag RIGHT -> ltr
-      // drag LEFT  -> rtl
-      const nextDir: 0 | 1 = e.translationX > 0 ? 0 : 1;
+    .onUpdate((e) => {
+      const tx = e.translationX * DRAG_SENSITIVITY;
+
+      // update position with clamp (use tx)
+      const nextPos = clamp(startX.value + tx, minX, maxX);
+      bgX.value = nextPos;
+
+      // direction (use tx)
+      const nextDir: 0 | 1 = tx > 0 ? 0 : 1;
       if (nextDir !== barDirSV.value) {
         barDirSV.value = nextDir;
         runOnJS(setBarDir)(nextDir === 1 ? "rtl" : "ltr");
       }
 
-      // progress to the edge in the drag direction, relative to resting initialX
+      // progress calc (use tx)
       let p = 0;
-
-      if (e.translationX > 0) {
+      if (tx > 0) {
         const denom = maxX - initialX;
-        p = denom <= 0 ? 1 : (nextX - initialX) / denom;
-      } else if (e.translationX < 0) {
+        p = denom <= 0 ? 1 : (nextPos - initialX) / denom;
+      } else if (tx < 0) {
         const denom = initialX - minX;
-        p = denom <= 0 ? 1 : (initialX - nextX) / denom;
+        p = denom <= 0 ? 1 : (initialX - nextPos) / denom;
       } else {
         p = 0;
       }
@@ -153,10 +185,10 @@ export default function SwipeHome() {
         runOnJS(setShowBar)(nextShow === 1);
       }
 
-      // opposite-direction label (only update when it changes)
+      // label (use tx)
       let nextLabelCode: 0 | 1 | 2 = 0;
-      if (e.translationX < -LABEL_DEADZONE) nextLabelCode = 2; // righty
-      else if (e.translationX > LABEL_DEADZONE) nextLabelCode = 1; // lefty
+      if (tx < -LABEL_DEADZONE) nextLabelCode = 2; // righty
+      else if (tx > LABEL_DEADZONE) nextLabelCode = 1; // lefty
 
       if (nextLabelCode !== lastLabel.value) {
         lastLabel.value = nextLabelCode;
@@ -165,6 +197,7 @@ export default function SwipeHome() {
         );
       }
     })
+    
     .onEnd(() => {
       // clear label + hide bar
       lastLabel.value = 0;
@@ -174,7 +207,7 @@ export default function SwipeHome() {
       runOnJS(setShowBar)(false);
 
       // If not completed or no next -> bounce back
-      if (!hasNext || dragProgress.value < 1) {
+      if (!hasNext || dragProgress.value < COMPLETE_THRESHOLD) {
         dragProgress.value = withTiming(0, { duration: 120 });
 
         barDirSV.value = 0;
@@ -186,20 +219,52 @@ export default function SwipeHome() {
 
       // Completed -> commit (advance profile, same screen)
       const goingRight = bgX.value > initialX;
-      const targetEdge = goingRight ? maxX : minX;
+      const exitEdge = goingRight ? maxX : minX;
 
-      bgX.value = withTiming(targetEdge, { duration: COMMIT_OUT_MS }, (finished) => {
-        if (!finished) return;
+      // NEXT should come from the opposite side
+      const entryFrom = goingRight ? minX : maxX;
 
-        runOnJS(setIndex)((prev) => Math.min(prev + 1, profiles.length - 1));
+      isTransitioning.value = true;
 
+      // show the next layer offscreen
+      nextVisible.value = 1;
+      nextX.value = entryFrom;
+
+      // animate CURRENT out to edge
+      bgX.value = withTiming(exitEdge, { duration: COMMIT_OUT_MS, easing: COMMIT_EASE }, (finished) => {
+        if (!finished) {
+          // bail safely
+          bgX.value = withSpring(initialX, SNAP_CFG);
+          nextVisible.value = 0;
+          isTransitioning.value = false;
+          return;
+        }
+
+        // ✅ update the data index now (optional)
+        runOnJS(bumpIndex)();
+
+        // reset progress + label state
         dragProgress.value = 0;
-
+        showBarSV.value = 0;
         barDirSV.value = 0;
+        runOnJS(setShowBar)(false);
         runOnJS(setBarDir)("ltr");
+        runOnJS(setSwipeLabel)("");
 
-        // back to resting position for the new profile
+        // IMPORTANT:
+        // move CURRENT instantly back to center for the new profile,
+        // but keep it hidden by making NEXT visible during the transition.
         bgX.value = initialX;
+        startX.value = initialX;
+
+        // animate NEXT into center (hallway "slides in")
+        nextX.value = withTiming(initialX, { duration: COMMIT_IN_MS, easing: COMMIT_EASE }, () => {
+          // ✅ swap what user sees AFTER the hallway arrives
+          runOnJS(bumpDisplayIndex)();
+          // hide next layer, transition done
+          nextVisible.value = 0;
+          isTransitioning.value = false;
+        });
       });
     });
 
@@ -210,44 +275,79 @@ export default function SwipeHome() {
       {/* Viewport */}
       <View style={styles.viewport}>
         <GestureDetector gesture={pan}>
-          {/* ✅ Draggable layer contains BOTH image + door */}
-          <Animated.View style={[StyleSheet.absoluteFill, dragLayerStyle]}>
-            <Animated.Image
-              source={BG_SOURCE}
-              resizeMode="stretch"
-              style={[
-                styles.bgImg,
-                {
-                  width: scaledW,
-                  height: scaledH,
-                  top: (H - scaledH) / 2, // vertically center-ish
-                },
-              ]}
-            />
+        {/* ✅ GestureDetector MUST have exactly ONE direct child */}
+            <View style={StyleSheet.absoluteFill}>
+              {/* CURRENT layer (the one you drag) */}
+              <Animated.View style={[StyleSheet.absoluteFill, dragLayerStyle]}>
+                <Animated.Image
+                  source={BG_SOURCE}
+                  resizeMode="stretch"
+                  style={[
+                    styles.bgImg,
+                    {
+                      width: scaledW,
+                      height: scaledH,
+                      top: (H - scaledH) / 2,
+                    },
+                  ]}
+                />
+                <View
+                  pointerEvents="none"
+                  style={[
+                    styles.doorPlaceholder,
+                    {
+                      left: doorLeft,
+                      width: DOOR_W,
+                      height: DOOR_H,
+                    },
+                  ]}
+                />
+              </Animated.View>
 
-            {/* ✅ Door positioned by image coordinates (stays aligned with door art) */}
-            <View
-              pointerEvents="none"
-              style={[
-                styles.doorPlaceholder,
-                {
-                  left: doorLeft,
-                  width: DOOR_W,
-                  height: DOOR_H,
-                },
-              ]}
-            />
-          </Animated.View>
+              {/* NEXT layer (slides in during transition) */}
+              <Animated.View
+                style={[StyleSheet.absoluteFill, nextLayerStyle]}
+                pointerEvents="none"
+              >
+                <Animated.Image
+                  source={BG_SOURCE}
+                  resizeMode="stretch"
+                  style={[
+                    styles.bgImg,
+                    {
+                      width: scaledW,
+                      height: scaledH,
+                      top: (H - scaledH) / 2,
+                    },
+                  ]}
+                />
+                <View
+                  pointerEvents="none"
+                  style={[
+                    styles.doorPlaceholder,
+                    {
+                      left: doorLeft,
+                      width: DOOR_W,
+                      height: DOOR_H,
+                    },
+                  ]}
+                />
+              </Animated.View>
+            </View>
         </GestureDetector>
       </View>
 
       {/* Fixed overlay bubble */}
-      <View style={styles.overlay} pointerEvents="none">
-        <View style={styles.infoBubblePlaceholder}>
-          <Text style={styles.nameText}>Anastasia, 20</Text>
-          <Text style={styles.quoteText}>
-            “I’m basically always at 2nd floor clem pretending to be locked in”
-          </Text>
+      <View style={styles.overlay} pointerEvents="box-none">
+        <View style={styles.infoBubbleWrap} pointerEvents="auto">
+          <InfoBubble
+            name={profile.name}
+            age={profile.age}
+            yearLabel={profile.yearLabel}
+            quote={profile.quote}
+            onPress={() => console.log("Pressed bubble for", profile.id)}
+            onPressAvatar={() => console.log("Pressed avatar for", profile.id)}
+          />
         </View>
       </View>
 
@@ -290,21 +390,13 @@ const styles = StyleSheet.create({
 
   overlay: { ...StyleSheet.absoluteFillObject },
 
-  infoBubblePlaceholder: {
-    position: "absolute",
-    left: 18,
-    right: 18,
-    bottom: 110,
-    height: 120,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.92)",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    elevation: 5,
+  infoBubbleWrap: {
+  position: "absolute",
+  left: 18,
+  right: 18,
+  bottom: 110,
+  alignItems: "center",
   },
-
-  nameText: { fontSize: 26, fontWeight: "800", color: "#0b2a5a" },
-  quoteText: { marginTop: 6, fontSize: 18, fontWeight: "600", color: "#0b2a5a" },
 
   holdBarWrap: {
     position: "absolute",
