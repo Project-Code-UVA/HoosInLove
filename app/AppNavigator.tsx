@@ -1,6 +1,7 @@
 // app/AppNavigator.tsx
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
+import { useFonts } from 'expo-font';
 
 import BaseScreen from './screens/BaseScreen';
 import LoginScreen from './screens/LoginScreen';
@@ -25,7 +26,6 @@ import SwipeHome from './screens/SwipePageScreens/SwipeHome';
 // PROFILE SCREEN
 //import ProfileScreen from "./screens/ProfileScreen/ProfileScreen";
 
-
 export type RootStackParamList = {
   BaseScreen: undefined;
   LoginScreen: undefined;
@@ -42,12 +42,20 @@ export type RootStackParamList = {
   InsideChat: { name: string };
 
   ViewProfile: { profile: any | null };
-
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
+  // ✅ load fonts ONCE here
+  const [fontsLoaded] = useFonts({
+    Gwendolyn: require('../assets/fonts/Gwendolyn-Regular.ttf'),
+    GwendolynBold: require('../assets/fonts/Gwendolyn-Bold.ttf'),
+  });
+
+  // ✅ don’t render until fonts are ready
+  if (!fontsLoaded) return null;
+
   return (
     <Stack.Navigator
       initialRouteName="BaseScreen"
@@ -57,20 +65,22 @@ export default function AppNavigator() {
       <Stack.Screen name="LoginScreen" component={LoginScreen} />
 
       {/* PROFILE SCREEN (currently temp screen placeholder) */}
-      <Stack.Screen name="ViewProfile" component={BaseScreen} /> 
+      <Stack.Screen name="ViewProfile" component={BaseScreen} />
 
       {/* CREATE ACCOUNT FLOW */}
       <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
-      <Stack.Screen 
-        name="VerifyEmail" 
-        component={VerifyEmailScreen} 
-        options={{ 
-          presentation: 'modal', 
-        }} 
-      /> 
+      <Stack.Screen
+        name="VerifyEmail"
+        component={VerifyEmailScreen}
+        options={{
+          presentation: 'modal',
+        }}
+      />
+
       {/* APP POLICIES & ADD PHOTOS */}
       <Stack.Screen name="AppPoliciesNotice" component={AppPoliciesNoticeScreen} />
       <Stack.Screen name="AddPhotos" component={AddPhotosScreen} />
+
       {/* DATING PREFERENCES & FINISH PROFILE */}
       <Stack.Screen name="DatingPreferences1" component={DatingPreferences1} />
       <Stack.Screen name="DatingPreferences2" component={DatingPreferences2} />
@@ -81,7 +91,6 @@ export default function AppNavigator() {
       <Stack.Screen name="InsideChat" component={InsideChat} />
 
       {/* <Stack.Screen name="ViewProfile" component={ViewProfile}/> */}
-
     </Stack.Navigator>
   );
 }

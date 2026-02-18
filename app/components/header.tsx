@@ -7,15 +7,19 @@ import ViewFriendsButton from './headercomponents/viewFriendsButton';
 export default function Header() {
   return (
     <View style={styles.headerContainer}>
-      {/* Left: Logo */}
-      <Logo />
 
-      {/* Right: Stacked buttons */}
+      {/* Left: Logo */}
+      <View style={styles.logoWrapper}>
+        <Logo scale={0.7} />
+      </View>
+
+      {/* Right: Buttons */}
       <View style={styles.rightSide}>
         <ReportAnIssueLink />
         <View style={styles.spacing} />
         <ViewFriendsButton />
       </View>
+
     </View>
   );
 }
@@ -23,22 +27,29 @@ export default function Header() {
 const styles = StyleSheet.create({
   headerContainer: {
     width: '100%',
+    height: 110,                 // ✅ FIXED HEIGHT
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    alignItems: 'flex-end',       // keeps logo bottom-left
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',
   },
+
+  logoWrapper: {
+    justifyContent: 'flex-end',
+  },
+
   rightSide: {
     flexDirection: 'column',
     alignItems: 'flex-end',
     justifyContent: 'flex-start',
   },
+
   spacing: {
-    height: 4, // small gap between the two buttons
+    height: 4,
   },
 });

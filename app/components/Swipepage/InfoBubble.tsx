@@ -2,7 +2,11 @@
 import React, { useEffect, useMemo } from "react";
 import { StyleSheet, View, Text, Image } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 
 type Props = {
   profile: {
@@ -20,31 +24,34 @@ const NAVY = "#002562";
 const CARD_BG = "#FFFFFF";
 const INNER_GRAY = "#D9D9D9";
 
-const COLLAPSED_H = 150; // height of normal bubble
-const EXPANDED_H = 700; // expanded bubble
+const COLLAPSED_H = 150;
+const EXPANDED_H = 700;
 
-// Handle bar from your SVG: 165x5 rx=2.5
 const HANDLE_W = 165;
 const HANDLE_H = 5;
 
-// lock quote footprint so the NAME never shifts
 const QUOTE_LINES = 3;
-const QUOTE_LINE_HEIGHT = 21; // must match styles.quote.lineHeight
-
-// hard character limit so quotes never feel huge
+const QUOTE_LINE_HEIGHT = 21;
 const QUOTE_MAX_CHARS = 90;
 
-// ✅ less-bouncy spring
+// smoother spring (less snappy / less bounce)
 const BUBBLE_SPRING = {
-  damping: 34,
-  stiffness: 220,
-  mass: 1,
-  overshootClamping: true, // kills bounce
+  damping: 44,
+  stiffness: 155,
+  mass: 1.2,
+  overshootClamping: true,
   restDisplacementThreshold: 0.5,
   restSpeedThreshold: 0.5,
 };
 
-export default function InfoBubble({ profile, expandEnabled, showHandle = true }: Props) {
+// space under handle when expanded
+const TOP_PAD_WHEN_EXPANDED = 20;
+
+export default function InfoBubble({
+  profile,
+  expandEnabled,
+  showHandle = true,
+}: Props) {
   const h = useSharedValue(COLLAPSED_H);
   const startH = useSharedValue(COLLAPSED_H);
 
@@ -72,27 +79,53 @@ export default function InfoBubble({ profile, expandEnabled, showHandle = true }
     })
     .onEnd(() => {
       const mid = (COLLAPSED_H + EXPANDED_H) / 2;
-      h.value = withSpring(h.value > mid ? EXPANDED_H : COLLAPSED_H, BUBBLE_SPRING);
+      const snapToExpanded = h.value > mid;
+      h.value = withSpring(
+        snapToExpanded ? EXPANDED_H : COLLAPSED_H,
+        BUBBLE_SPRING
+      );
     });
 
   const cardStyle = useAnimatedStyle(() => ({ height: h.value }));
 
+  // ✅ KEY: offset derived continuously from height (no abrupt jump), with safe inline clamp
+  const contentStyle = useAnimatedStyle(() => {
+    // clamp01 inside the worklet
+    const raw = (h.value - COLLAPSED_H) / (EXPANDED_H - COLLAPSED_H);
+    const t = raw < 0 ? 0 : raw > 1 ? 1 : raw;
+
+    // optional easing so it moves less at the start of the drag
+    const easedT = Math.pow(t, 1.25);
+
+    // negate the "center drift" when the card grows
+    const expandedShift =
+      -((EXPANDED_H - COLLAPSED_H) / 2) + TOP_PAD_WHEN_EXPANDED;
+
+    return {
+      transform: [{ translateY: easedT * expandedShift }],
+    };
+  });
+
   return (
     <GestureDetector gesture={pan}>
       <Animated.View style={[styles.card, cardStyle]}>
-        {/* handle is always rendered; only opacity changes (no layout shift) */}
-        <View style={[styles.handleWrap, { opacity: showHandle ? 1 : 0 }]} pointerEvents="none">
+        <View
+          style={[styles.handleWrap, { opacity: showHandle ? 1 : 0 }]}
+          pointerEvents="none"
+        >
           <View style={styles.handle} />
         </View>
 
-        {/* keep content at the "old" higher position */}
-        <View style={styles.row}>
+        <Animated.View style={[styles.row, contentStyle]}>
           {/* Avatar + Year */}
           <View style={styles.leftCol}>
             <View style={styles.avatarOuter}>
               <View style={styles.avatarInner}>
                 {profile.photoUri ? (
-                  <Image source={{ uri: profile.photoUri }} style={styles.avatarImg} />
+                  <Image
+                    source={{ uri: profile.photoUri }}
+                    style={styles.avatarImg}
+                  />
                 ) : (
                   <View style={styles.avatarPlaceholder}>
                     <View style={styles.cameraGlyph} />
@@ -110,15 +143,24 @@ export default function InfoBubble({ profile, expandEnabled, showHandle = true }
 
           {/* Text */}
           <View style={styles.textCol}>
-            <Text style={styles.name} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+            <Text
+              style={styles.name}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+            >
               {profile.name}, {profile.age}
             </Text>
 
-            <Text style={styles.quote} numberOfLines={QUOTE_LINES} ellipsizeMode="tail">
+            <Text
+              style={styles.quote}
+              numberOfLines={QUOTE_LINES}
+              ellipsizeMode="tail"
+            >
               {clippedQuote ? `“${clippedQuote}”` : " "}
             </Text>
           </View>
-        </View>
+        </Animated.View>
       </Animated.View>
     </GestureDetector>
   );
@@ -161,7 +203,6 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 0, // no downward shift when handle appears
   },
 
   leftCol: {
