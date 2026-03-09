@@ -1,7 +1,7 @@
 // app/AppNavigator.tsx
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React from 'react';
 import { useFonts } from 'expo-font';
+import React from 'react';
 
 import BaseScreen from './screens/BaseScreen';
 import LoginScreen from './screens/LoginScreen';
@@ -23,10 +23,11 @@ import InsideChat from './screens/ChatScreens/InsideChat';
 // SWIPE PAGE SCREENS
 import SwipeHome from './screens/SwipePageScreens/SwipeHome';
 
-import ProfileScreen from "./screens/ProfilePageScreens/ProfileScreen";
+// PROFILE SCREEN
+import ProfileScreen from './screens/ProfilePageScreens/ProfileScreen';
 
 export type RootStackParamList = {
-  StartScreen: undefined;
+  SwipeHome: undefined;
   BaseScreen: undefined;
   LoginScreen: undefined;
   CreateAccount: undefined;
@@ -47,21 +48,22 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
-  // ✅ load fonts ONCE here
   const [fontsLoaded] = useFonts({
     Gwendolyn: require('../assets/fonts/Gwendolyn-Regular.ttf'),
     GwendolynBold: require('../assets/fonts/Gwendolyn-Bold.ttf'),
   });
 
-  // ✅ don’t render until fonts are ready
   if (!fontsLoaded) return null;
 
   return (
     <Stack.Navigator
-      initialRouteName="StartScreen"
-      screenOptions={{ headerShown: false }}
+      initialRouteName="SwipeHome"
+      screenOptions={{
+        headerShown: false,
+        animation: 'none',
+      }}
     >
-      <Stack.Screen name="StartScreen" component={SwipeHome} />
+      <Stack.Screen name="SwipeHome" component={SwipeHome} />
       <Stack.Screen name="BaseScreen" component={BaseScreen} />
       <Stack.Screen name="LoginScreen" component={LoginScreen} />
 
@@ -79,19 +81,30 @@ export default function AppNavigator() {
       />
 
       {/* APP POLICIES & ADD PHOTOS */}
-      <Stack.Screen name="AppPoliciesNotice" component={AppPoliciesNoticeScreen} />
+      <Stack.Screen
+        name="AppPoliciesNotice"
+        component={AppPoliciesNoticeScreen}
+      />
       <Stack.Screen name="AddPhotos" component={AddPhotosScreen} />
 
       {/* DATING PREFERENCES & FINISH PROFILE */}
-      <Stack.Screen name="DatingPreferences1" component={DatingPreferences1} />
-      <Stack.Screen name="DatingPreferences2" component={DatingPreferences2} />
-      <Stack.Screen name="DatingPreferences3" component={DatingPreferences3} />
+      <Stack.Screen
+        name="DatingPreferences1"
+        component={DatingPreferences1}
+      />
+      <Stack.Screen
+        name="DatingPreferences2"
+        component={DatingPreferences2}
+      />
+      <Stack.Screen
+        name="DatingPreferences3"
+        component={DatingPreferences3}
+      />
       <Stack.Screen name="FinishProfile" component={FinishProfile} />
 
+      {/* CHAT */}
       <Stack.Screen name="Chats" component={Chats} />
       <Stack.Screen name="InsideChat" component={InsideChat} />
-
-      {/* <Stack.Screen name="ViewProfile" component={ViewProfile}/> */}
     </Stack.Navigator>
   );
 }
