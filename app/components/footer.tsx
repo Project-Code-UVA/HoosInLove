@@ -7,7 +7,7 @@ import HeartIcon from './footercomponents/heartIcon';
 
 type RootStackParamList = {
   Chats: undefined;
-  StartScreen: undefined;
+  SwipeHome: undefined;
   ViewProfile: { profile: any | null };
 };
 
@@ -18,7 +18,9 @@ export default function Footer() {
     <View style={styles.wrap}>
       <TouchableOpacity
         style={styles.iconButton}
-        onPress={() => { navigation.navigate('Chats'); }}
+        onPress={() => {
+          navigation.navigate('Chats');
+        }}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <ChatIcon height={30.5} />
@@ -26,7 +28,7 @@ export default function Footer() {
 
       <TouchableOpacity
         style={[styles.iconButton, styles.centerIcon]}
-        onPress={() => navigation.navigate('StartScreen')}
+        onPress={() => navigation.navigate('SwipeHome')}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <HeartIcon size={43} />
