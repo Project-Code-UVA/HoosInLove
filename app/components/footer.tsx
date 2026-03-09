@@ -7,7 +7,7 @@ import HeartIcon from './footercomponents/heartIcon';
 
 type RootStackParamList = {
   Chats: undefined;
-  BaseScreen: undefined;
+  StartScreen: undefined;
   ViewProfile: { profile: any | null };
 };
 
@@ -18,7 +18,7 @@ export default function Footer() {
     <View style={styles.wrap}>
       <TouchableOpacity
         style={styles.iconButton}
-        onPress={() => {navigation.navigate('Chats')}}
+        onPress={() => { navigation.navigate('Chats'); }}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <ChatIcon height={30.5} />
@@ -26,7 +26,7 @@ export default function Footer() {
 
       <TouchableOpacity
         style={[styles.iconButton, styles.centerIcon]}
-        onPress={() => navigation.navigate('BaseScreen')}
+        onPress={() => navigation.navigate('StartScreen')}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <HeartIcon size={43} />
@@ -52,8 +52,8 @@ const styles = StyleSheet.create({
     borderTopColor: '#E9E9E9',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between', // switched from even spacing to true edge spacing
-    paddingHorizontal: 55, // adds extra outer margin for breathing room
+    justifyContent: 'space-between',
+    paddingHorizontal: 55,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -1 },
     shadowOpacity: 0.05,
@@ -65,6 +65,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   centerIcon: {
-    marginBottom: 1.5, // slight visual centering
+    marginBottom: 1.5,
   },
 });

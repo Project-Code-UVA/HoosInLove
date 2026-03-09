@@ -23,10 +23,10 @@ import InsideChat from './screens/ChatScreens/InsideChat';
 // SWIPE PAGE SCREENS
 import SwipeHome from './screens/SwipePageScreens/SwipeHome';
 
-// PROFILE SCREEN
-//import ProfileScreen from "./screens/ProfileScreen/ProfileScreen";
+import ProfileScreen from "./screens/ProfilePageScreens/ProfileScreen";
 
 export type RootStackParamList = {
+  StartScreen: undefined;
   BaseScreen: undefined;
   LoginScreen: undefined;
   CreateAccount: undefined;
@@ -58,14 +58,15 @@ export default function AppNavigator() {
 
   return (
     <Stack.Navigator
-      initialRouteName="BaseScreen"
+      initialRouteName="StartScreen"
       screenOptions={{ headerShown: false }}
     >
-      <Stack.Screen name="BaseScreen" component={SwipeHome} />
+      <Stack.Screen name="StartScreen" component={SwipeHome} />
+      <Stack.Screen name="BaseScreen" component={BaseScreen} />
       <Stack.Screen name="LoginScreen" component={LoginScreen} />
 
-      {/* PROFILE SCREEN (currently temp screen placeholder) */}
-      <Stack.Screen name="ViewProfile" component={BaseScreen} />
+      {/* PROFILE SCREEN */}
+      <Stack.Screen name="ViewProfile" component={ProfileScreen} />
 
       {/* CREATE ACCOUNT FLOW */}
       <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
