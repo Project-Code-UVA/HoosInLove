@@ -1,4 +1,5 @@
 // app/screens/SwipePageScreens/SwipeHome.tsx
+import { supabase } from "@/services/supabase";
 import React, { useEffect, useMemo, useState } from "react";
 import { Dimensions, Image, StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -10,10 +11,12 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
+import { Profile } from "../../data/Profile";
 
 import Footer from "../../components/footer";
 import ProgressBar from "../../components/Swipepage/BottomProgressBar";
 import InfoBubble from "../../components/Swipepage/InfoBubble";
+// to be removed LATER:
 import { MOCK_PROFILES } from "../../data/mockProfiles";
 
 const { width: W, height: H } = Dimensions.get("window");
@@ -49,10 +52,54 @@ const SPRING_K = 0.020;
 type BarDir = "ltr" | "rtl";
 
 export default function SwipeHome() {
-  const profiles = MOCK_PROFILES;
+  // TODO: REMOVE MOCK PROFILE STUFF
+
+  const [profiles, setProfiles] = useState<Profile[]>(MOCK_PROFILES); // supports both mock & real profiles FOR NOW!! (change to const [profiles, setProfiles] = useState<Profile[]>([]);)
   const n = profiles.length;
 
   const [index, setIndex] = useState(0);
+
+  // fetch profiles
+  const fetchProfiles = async () => {
+    const {data, error } = await supabase
+      .from("user_profile")
+      .select("*");
+
+    if (!error && data && data.length > 0) {
+      const mapped = data.map((u: any) => ({
+        id: u.id,
+        name: `${u.first_name} ${u.last_name ?? ""}`,
+        age: Number(u.age),
+        yearLabel: u.school_year,
+        quote: u.bio ?? "",
+        pronouns: u.pronouns ?? "",
+        playlist: u.playlist ?? "",
+      }));
+      setProfiles(mapped);
+    }
+  }
+
+  // ensure profiles load when screen mounts
+  useEffect(() => {
+    fetchProfiles();
+  }, []);
+
+  // record user's knock
+  const recordKnock = async (targetId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { error } = await supabase.from("matches").insert({
+      user_1_id: user.id,
+      user_2_id: targetId,
+      status: "knock"
+    });
+
+    if (error) {
+      console.error("Knock failed: ", error);
+    }
+  }
 
   // swipe progress bar (the loading/hold bar, NOT the navy handle)
   const [barDir, setBarDir] = useState<BarDir>("ltr");
@@ -67,7 +114,9 @@ export default function SwipeHome() {
   const bubbleBottom = footerH + BUBBLE_GAP;
   const holdBarBottom = footerH + 6;
 
-  const profile = profiles[index % n];
+  const profile = profiles.length
+    ? profiles[index % profiles.length]
+    : null;
 
   /* -------------------- IMAGE SIZING -------------------- */
 
@@ -280,6 +329,17 @@ export default function SwipeHome() {
       }
     });
 
+  // Knock on open door (to give like)
+  const knockGesture = Gesture.Tap()
+    .enabled(isOpen)
+    .numberOfTaps(4)
+    .maxDelay(250)
+    .onStart(() => {
+      if (profile) {
+        runOnJS(recordKnock)(profile.id);
+      }
+    });
+
   // Vertical swipe DOWN to close (anywhere)
   const closePan = Gesture.Pan()
     .enabled(isOpen)
@@ -300,7 +360,7 @@ export default function SwipeHome() {
   return (
     <View style={styles.screen}>
       <View style={styles.viewport}>
-        <GestureDetector gesture={isOpen ? closePan : closedGesture}>
+        <GestureDetector gesture={isOpen ? Gesture.Simultaneous(closePan, knockGesture) : closedGesture}>
           <Animated.View style={[StyleSheet.absoluteFill, sceneZoomStyle]}>
             <Animated.View style={[styles.strip, stripStyle]}>
               {/* DoorPrev */}
@@ -366,17 +426,19 @@ export default function SwipeHome() {
       {/* Info Bubble */}
       <View style={styles.overlay} pointerEvents="box-none">
         <View style={[styles.infoBubbleWrap, { bottom: bubbleBottom }]} pointerEvents="auto">
-          <InfoBubble
-            profile={{
-              name: profile.name,
-              age: profile.age,
-              yearLabel: profile.yearLabel,
-              quote: profile.quote,
-              photoUri: (profile as any).photoUri,
-            }}
-            expandEnabled={isOpen}
-            showHandle={isOpen}
-          />
+          {profile && (
+            <InfoBubble
+              profile={{
+                name: profile.name,
+                age: profile.age,
+                yearLabel: profile.yearLabel,
+                quote: profile.quote,
+                photoUri: (profile as any).photoUri,
+              }}
+              expandEnabled={isOpen}
+              showHandle={isOpen}
+            />
+          )}
         </View>
       </View>
 
