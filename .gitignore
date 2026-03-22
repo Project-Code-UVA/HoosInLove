@@ -44,4 +44,4 @@ app-example
 
 # Android local paths (Paul's specific SDK)
 android/local.properties
-.env
+.env.idea/
