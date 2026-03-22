@@ -41,3 +41,7 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Android local paths (Paul's specific SDK)
+android/local.properties
+.env

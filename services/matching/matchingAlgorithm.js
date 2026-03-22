@@ -24,7 +24,7 @@ async function getMatchingProfiles(currentUserId, limit = 20) {
   try {
     // 1. Get current user's full data
     const [currentUserResult] = await db.query(
-      'SELECT * FROM "user" WHERE user_id = ?',  
+      'SELECT * FROM user_profile WHERE user_id = ?',  
       [currentUserId]
     );
     const currentUser = currentUserResult[0];

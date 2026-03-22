@@ -3,7 +3,7 @@ const db = require('../../config/database');
 async function getPotentialMatches(currentUserId) {
   const query = `
     SELECT DISTINCT u.*
-    FROM "user" u
+    FROM "user_profile" u
     WHERE u.user_id != ?
     AND u.account_status = 'active'
     AND u.verification_status = true
