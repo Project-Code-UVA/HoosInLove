@@ -1,5 +1,5 @@
 // app/screens/ViewProfile.tsx
-import React from 'react';
+import React from "react";
 import {
   Image,
   ScrollView,
@@ -7,13 +7,13 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
+} from "react-native";
 
-import { RouteProp } from '@react-navigation/native';
-import { RootStackParamList } from '../AppNavigator';
-import PrettyBackground from '../components/PrettyBackground';
+import { RouteProp, useRoute } from "@react-navigation/native";
+import { RootStackParamList } from "../AppNavigator";
+import PrettyBackground from "../components/PrettyBackground";
 
-type ViewProfileRouteProp = RouteProp<RootStackParamList, 'ViewProfile'>;
+type ViewProfileRouteProp = RouteProp<RootStackParamList, "ViewProfile">;
 
 interface ProfileData {
   name: string;
@@ -30,16 +30,24 @@ interface ProfileData {
   yearIcon: any; // require(...) for icon
 }
 
-interface ProfileScreenProps {
-  profile: ProfileData;
-}
+const ViewProfile: React.FC = () => {
+  const route = useRoute<ViewProfileRouteProp>();
+  const profile = route.params?.profile;
 
-const ViewProfile: React.FC<ProfileScreenProps> = ({ profile }) => {
+  if (!profile) {
+    return (
+      <PrettyBackground>
+        <View style={styles.container}>
+          <Text>No profile data</Text>
+        </View>
+      </PrettyBackground>
+    );
+  }
+
   return (
     <PrettyBackground>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.card}>
-
           <Text style={styles.name}>
             {profile.name}, {profile.age}
           </Text>
@@ -59,7 +67,7 @@ const ViewProfile: React.FC<ProfileScreenProps> = ({ profile }) => {
           {/* Looking For */}
           <Text style={styles.sectionHeader}>Looking for:</Text>
           <View style={styles.chipRow}>
-            {profile.lookingFor.map((item, idx) => (
+            {profile.lookingFor.map((item: string, idx: number) => (
               <View key={idx} style={styles.orangeChip}>
                 <Text style={styles.chipText}>{item}</Text>
               </View>
@@ -69,7 +77,7 @@ const ViewProfile: React.FC<ProfileScreenProps> = ({ profile }) => {
           {/* Love Languages */}
           <Text style={styles.sectionHeader}>Love Languages:</Text>
           <View style={styles.chipRow}>
-            {profile.loveLanguages.map((item, idx) => (
+            {profile.loveLanguages.map((item: string, idx: number) => (
               <View key={idx} style={styles.blueChip}>
                 <Text style={styles.chipText}>{item}</Text>
               </View>
@@ -83,8 +91,12 @@ const ViewProfile: React.FC<ProfileScreenProps> = ({ profile }) => {
           {profile.playlistLink && (
             <>
               <Text style={styles.bottomLabel}>My Favorite Playlist:</Text>
-              <TouchableOpacity onPress={() => console.log('Open Playlist', profile.playlistLink)}>
-              <Text style={styles.linkText}>{profile.playlistLink}</Text>
+              <TouchableOpacity
+                onPress={() =>
+                  console.log("Open Playlist", profile.playlistLink)
+                }
+              >
+                <Text style={styles.linkText}>{profile.playlistLink}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -93,45 +105,45 @@ const ViewProfile: React.FC<ProfileScreenProps> = ({ profile }) => {
           {profile.instagram && (
             <>
               <Text style={styles.bottomLabel}>Instagram:</Text>
-              <TouchableOpacity onPress={() => console.log('Open Instagram', profile.instagram)}>
-              <Text style={styles.linkText}>{profile.instagram}</Text>
+              <TouchableOpacity
+                onPress={() => console.log("Open Instagram", profile.instagram)}
+              >
+                <Text style={styles.linkText}>{profile.instagram}</Text>
               </TouchableOpacity>
             </>
           )}
-
         </View>
       </ScrollView>
     </PrettyBackground>
   );
 };
 
-
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 40,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   card: {
-    width: '85%',
-    backgroundColor: '#FFFFFF',
+    width: "85%",
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
 
   headerRow: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
     marginBottom: 10,
   },
 
   headerLink: {
     fontSize: 12,
-    color: '#003366',
-    backgroundColor: '#C2E3FF',
+    color: "#003366",
+    backgroundColor: "#C2E3FF",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
@@ -139,21 +151,21 @@ const styles = StyleSheet.create({
 
   name: {
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 
   subtitle: {
     marginTop: 4,
-    color: '#444',
+    color: "#444",
   },
 
   pronouns: {
-    color: '#555',
+    color: "#555",
     marginBottom: 10,
   },
 
   picWrapper: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 10,
     marginBottom: 25,
   },
@@ -162,31 +174,31 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#DCEBFF',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#DCEBFF",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   picIcon: {
     width: 50,
     height: 50,
-    tintColor: '#777',
+    tintColor: "#777",
   },
 
   yearSection: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 15,
   },
 
   yearLabel: {
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 8,
   },
 
   yearIcon: {
     width: 60,
     height: 60,
-    resizeMode: 'contain',
+    resizeMode: "contain",
   },
 
   infoBlock: {
@@ -196,11 +208,11 @@ const styles = StyleSheet.create({
   infoLabel: {
     marginTop: 10,
     marginBottom: 4,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   infoValueBox: {
-    backgroundColor: '#EAF2FF',
+    backgroundColor: "#EAF2FF",
     paddingVertical: 8,
     paddingHorizontal: 10,
     borderRadius: 6,
@@ -208,16 +220,16 @@ const styles = StyleSheet.create({
 
   sectionHeader: {
     marginTop: 18,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 
   chipRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginTop: 8,
   },
 
   orangeChip: {
-    backgroundColor: '#F9C27A',
+    backgroundColor: "#F9C27A",
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 8,
@@ -225,7 +237,7 @@ const styles = StyleSheet.create({
   },
 
   blueChip: {
-    backgroundColor: '#C2E3FF',
+    backgroundColor: "#C2E3FF",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
@@ -233,46 +245,46 @@ const styles = StyleSheet.create({
   },
 
   chipText: {
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   photoHolder: {
-    width: '100%',
+    width: "100%",
     height: 200,
-    backgroundColor: '#C2E3FF',
+    backgroundColor: "#C2E3FF",
     borderRadius: 12,
     marginTop: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   photoHolderIcon: {
     width: 40,
     height: 40,
-    tintColor: '#555',
+    tintColor: "#555",
   },
 
   aboutText: {
     marginTop: 18,
-    color: '#333',
+    color: "#333",
     lineHeight: 20,
   },
 
   bottomLabel: {
     marginTop: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 
   linkText: {
-    color: '#0033CC',
-    textDecorationLine: 'underline',
+    color: "#0033CC",
+    textDecorationLine: "underline",
   },
 
   navBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    backgroundColor: '#F9C27A',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
+    backgroundColor: "#F9C27A",
     paddingVertical: 12,
     marginTop: 20,
   },
@@ -280,7 +292,7 @@ const styles = StyleSheet.create({
   navIcon: {
     width: 26,
     height: 26,
-    tintColor: '#002244',
+    tintColor: "#002244",
   },
 });
 

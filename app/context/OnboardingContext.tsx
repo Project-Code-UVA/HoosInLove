@@ -37,11 +37,9 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [data, setData] = useState<OnboardingData>(initialData);
   const updateData = (newData: Partial<OnboardingData>) => setData(prev => ({ ...prev, ...newData }));
 
-  return (
-    <OnboardingContext.Provider value={{ data, updateData }}>
-      {children}
-    </OnboardingContext.Provider>
-  );
+  const value = { data, updateData };
+
+  return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;
 };
 
 export const useOnboarding = () => {

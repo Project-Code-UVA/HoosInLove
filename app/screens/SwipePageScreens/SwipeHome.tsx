@@ -1,7 +1,7 @@
 // app/screens/SwipePageScreens/SwipeHome.tsx
 import { supabase } from "@/services/supabase";
 import React, { useEffect, useMemo, useState } from "react";
-import { Dimensions, Image, StyleSheet, View } from "react-native";
+import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   Easing,
@@ -16,8 +16,11 @@ import { Profile } from "../../data/Profile";
 import Footer from "../../components/footer";
 import ProgressBar from "../../components/Swipepage/BottomProgressBar";
 import InfoBubble from "../../components/Swipepage/InfoBubble";
+
 // to be removed LATER:
 import { MOCK_PROFILES } from "../../data/mockProfiles";
+
+const BACKEND_BASE_URL = "http://localhost:3000"; // Change this to your backend URL in production
 
 const { width: W, height: H } = Dimensions.get("window");
 
@@ -47,59 +50,107 @@ const COMMIT_MS = 380;
 const COMMIT_EASE = Easing.out(Easing.cubic);
 
 /* spring pull curve */
-const SPRING_K = 0.020;
+const SPRING_K = 0.02;
 
 type BarDir = "ltr" | "rtl";
 
 export default function SwipeHome() {
-  // TODO: REMOVE MOCK PROFILE STUFF
-
-  const [profiles, setProfiles] = useState<Profile[]>(MOCK_PROFILES); // supports both mock & real profiles FOR NOW!! (change to const [profiles, setProfiles] = useState<Profile[]>([]);)
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [isLoadingProfiles, setIsLoadingProfiles] = useState<boolean>(true);
   const n = profiles.length;
 
   const [index, setIndex] = useState(0);
 
-  // fetch profiles
+  // fetch profiles from matching algorithm endpoint
   const fetchProfiles = async () => {
-    const {data, error } = await supabase
-      .from("user_profile")
-      .select("*");
+    setIsLoadingProfiles(true);
+    try {
+      const sessionResult = await supabase.auth.getSession();
+      const token = sessionResult?.data?.session?.access_token;
 
-    if (!error && data && data.length > 0) {
-      const mapped = data.map((u: any) => ({
-        id: u.id,
-        name: `${u.first_name} ${u.last_name ?? ""}`,
-        age: Number(u.age),
-        yearLabel: u.school_year,
-        quote: u.bio ?? "",
-        pronouns: u.pronouns ?? "",
-        playlist: u.playlist ?? "",
-      }));
-      setProfiles(mapped);
+      if (!token) {
+        console.warn(
+          "No auth session available yet; using mock profiles until login completes.",
+        );
+        setProfiles(MOCK_PROFILES);
+        setIsLoadingProfiles(false);
+        return;
+      }
+
+      const response = await fetch(
+        `${BACKEND_BASE_URL}/api/matches/profiles?limit=20`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      const result = await response.json();
+
+      if (response.ok && result.success && Array.isArray(result.profiles)) {
+        const mapped = result.profiles.map((u: any) => ({
+          id: u.user_id ?? u.id?.toString() ?? "",
+          name:
+            (u.name ?? `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim()) ||
+            "Unknown",
+          age: Number(u.age || u.age_range || 0),
+          yearLabel: u.school_year ?? u.year ?? "",
+          quote: u.bio ?? u.quote ?? "",
+          pronouns: u.pronouns ?? "",
+          photoUri: u.profile_picture_url ?? u.photoUri ?? u.avatar_url ?? "",
+        }));
+        setProfiles(mapped);
+      } else {
+        console.warn(
+          "Using mock profiles due to empty API result or error",
+          result,
+        );
+        setProfiles(MOCK_PROFILES);
+      }
+    } catch (error) {
+      console.error("Algorithm fetch failed:", error);
+      setProfiles(MOCK_PROFILES);
+    } finally {
+      setIsLoadingProfiles(false);
     }
-  }
+  };
 
-  // ensure profiles load when screen mounts
+  // ensure profiles load when screen mounts, and re-fetch after auth state changes
   useEffect(() => {
     fetchProfiles();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session?.access_token) {
+          fetchProfiles();
+        }
+      },
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   // record user's knock
   const recordKnock = async (targetId: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) return;
 
     const { error } = await supabase.from("matches").insert({
       user_1_id: user.id,
       user_2_id: targetId,
-      status: "knock"
+      status: "knock",
     });
 
     if (error) {
       console.error("Knock failed: ", error);
     }
-  }
+  };
 
   // swipe progress bar (the loading/hold bar, NOT the navy handle)
   const [barDir, setBarDir] = useState<BarDir>("ltr");
@@ -114,9 +165,7 @@ export default function SwipeHome() {
   const bubbleBottom = footerH + BUBBLE_GAP;
   const holdBarBottom = footerH + 6;
 
-  const profile = profiles.length
-    ? profiles[index % profiles.length]
-    : null;
+  const profile = profiles.length ? profiles[index % profiles.length] : null;
 
   /* -------------------- IMAGE SIZING -------------------- */
 
@@ -233,7 +282,7 @@ export default function SwipeHome() {
       ...StyleSheet.absoluteFillObject,
       transform: [{ translateX: initialX }],
     }),
-    [initialX]
+    [initialX],
   );
 
   /* -------------------- COMMIT -------------------- */
@@ -255,7 +304,7 @@ export default function SwipeHome() {
         translateX.value = 0;
         dragProgress.value = 0;
         isCommitting.value = false;
-      }
+      },
     );
   };
 
@@ -360,7 +409,13 @@ export default function SwipeHome() {
   return (
     <View style={styles.screen}>
       <View style={styles.viewport}>
-        <GestureDetector gesture={isOpen ? Gesture.Simultaneous(closePan, knockGesture) : closedGesture}>
+        <GestureDetector
+          gesture={
+            isOpen
+              ? Gesture.Simultaneous(closePan, knockGesture)
+              : closedGesture
+          }
+        >
           <Animated.View style={[StyleSheet.absoluteFill, sceneZoomStyle]}>
             <Animated.View style={[styles.strip, stripStyle]}>
               {/* DoorPrev */}
@@ -369,7 +424,10 @@ export default function SwipeHome() {
                   <Image
                     source={DOOR_BG}
                     resizeMode="stretch"
-                    style={[styles.bgImg, { width: scaledW, height: scaledH, top: BG_TOP }]}
+                    style={[
+                      styles.bgImg,
+                      { width: scaledW, height: scaledH, top: BG_TOP },
+                    ]}
                   />
                 </View>
               </View>
@@ -380,7 +438,10 @@ export default function SwipeHome() {
                   <Image
                     source={WALL_BG}
                     resizeMode="stretch"
-                    style={[styles.bgImg, { width: scaledW, height: scaledH, top: BG_TOP }]}
+                    style={[
+                      styles.bgImg,
+                      { width: scaledW, height: scaledH, top: BG_TOP },
+                    ]}
                   />
                 </View>
               </View>
@@ -391,7 +452,10 @@ export default function SwipeHome() {
                   <Image
                     source={DOOR_BG}
                     resizeMode="stretch"
-                    style={[styles.bgImg, { width: scaledW, height: scaledH, top: BG_TOP }]}
+                    style={[
+                      styles.bgImg,
+                      { width: scaledW, height: scaledH, top: BG_TOP },
+                    ]}
                   />
                   {/* ✅ no Pressable door zone */}
                 </View>
@@ -403,7 +467,10 @@ export default function SwipeHome() {
                   <Image
                     source={WALL_BG}
                     resizeMode="stretch"
-                    style={[styles.bgImg, { width: scaledW, height: scaledH, top: BG_TOP }]}
+                    style={[
+                      styles.bgImg,
+                      { width: scaledW, height: scaledH, top: BG_TOP },
+                    ]}
                   />
                 </View>
               </View>
@@ -414,7 +481,10 @@ export default function SwipeHome() {
                   <Image
                     source={DOOR_BG}
                     resizeMode="stretch"
-                    style={[styles.bgImg, { width: scaledW, height: scaledH, top: BG_TOP }]}
+                    style={[
+                      styles.bgImg,
+                      { width: scaledW, height: scaledH, top: BG_TOP },
+                    ]}
                   />
                 </View>
               </View>
@@ -425,7 +495,26 @@ export default function SwipeHome() {
 
       {/* Info Bubble */}
       <View style={styles.overlay} pointerEvents="box-none">
-        <View style={[styles.infoBubbleWrap, { bottom: bubbleBottom }]} pointerEvents="auto">
+        <View
+          style={[styles.infoBubbleWrap, { bottom: bubbleBottom }]}
+          pointerEvents="auto"
+        >
+          {isLoadingProfiles && (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>
+                Loading possible matches...
+              </Text>
+            </View>
+          )}
+
+          {!isLoadingProfiles && !profile && (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>
+                No matches available right now.
+              </Text>
+            </View>
+          )}
+
           {profile && (
             <InfoBubble
               profile={{
@@ -444,13 +533,19 @@ export default function SwipeHome() {
 
       {/* Swipe progress bar — only during swipe and only when NOT open */}
       {showSwipeBar && !isOpen && (
-        <View style={[styles.holdBarWrap, { bottom: holdBarBottom }]} pointerEvents="none">
+        <View
+          style={[styles.holdBarWrap, { bottom: holdBarBottom }]}
+          pointerEvents="none"
+        >
           <ProgressBar progress={dragProgress} direction={barDir} />
         </View>
       )}
 
       {/* Footer */}
-      <View style={styles.footerFixed} onLayout={(e) => setFooterH(e.nativeEvent.layout.height)}>
+      <View
+        style={styles.footerFixed}
+        onLayout={(e) => setFooterH(e.nativeEvent.layout.height)}
+      >
         <Footer />
       </View>
     </View>
@@ -462,11 +557,28 @@ const styles = StyleSheet.create({
   viewport: { flex: 1, overflow: "hidden" },
 
   strip: { position: "absolute", top: 0, bottom: 0, left: 0, right: 0 },
-  page: { position: "absolute", top: 0, bottom: 0, width: W, overflow: "hidden" },
+  page: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    width: W,
+    overflow: "hidden",
+  },
 
   bgImg: { position: "absolute", left: 0 },
 
   overlay: { ...StyleSheet.absoluteFillObject },
+
+  loadingContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 4,
+  },
+  loadingText: {
+    color: "#333",
+    fontSize: 14,
+    fontWeight: "600",
+  },
 
   // bubble placement (bottom injected inline)
   infoBubbleWrap: { position: "absolute", left: 13, right: 13 },
