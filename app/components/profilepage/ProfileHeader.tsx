@@ -1,7 +1,5 @@
-// app/components/profile/ProfileHeader.tsx
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import Logo from '../headercomponents/logo';
 
 type Props = {
@@ -22,8 +20,11 @@ export default function ProfileHeader({ onMenuPress }: Props) {
         style={styles.menuButton}
         activeOpacity={0.8}
         onPress={onMenuPress}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
       >
-        <Ionicons name="menu" size={34} color={NAVY} />
+        <View style={styles.bar} />
+        <View style={styles.bar} />
+        <View style={styles.bar} />
       </TouchableOpacity>
     </View>
   );
@@ -37,19 +38,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
     borderBottomWidth: 1,
     borderBottomColor: '#D3DBE6',
+    position: 'relative',
   },
 
   logoWrapper: {
     justifyContent: 'flex-end',
+    alignItems: 'flex-start',
   },
 
   menuButton: {
-    justifyContent: 'flex-end',
-    paddingBottom: 2,
+    position: 'absolute',
+    right: 20,
+    bottom: 16,
+    width: 36,
+    height: 24, 
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  bar: {
+    width: 30,
+    height: 4, 
+    borderRadius: 999,
+    backgroundColor: '#002562',
   },
 });

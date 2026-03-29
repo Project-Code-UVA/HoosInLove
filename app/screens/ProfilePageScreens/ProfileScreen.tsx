@@ -28,6 +28,7 @@ import hooImg from "../../../assets/images/account_year_images/Hoo_rotunda.png";
 
 type RootStackParamList = {
   BaseScreen: undefined;
+  EditProfile: undefined;
 };
 
 const NAVY = "#002562";
@@ -127,7 +128,7 @@ export default function ProfileScreen() {
             <View style={styles.firstBlockSpacing}>
               <ProfileInfoBlock
                 label="When I’m not in class, I’m..."
-                value={profile.funFact}
+                value={profile.favoriteClub}
                 variant="tan"
               />
             </View>
@@ -160,7 +161,7 @@ export default function ProfileScreen() {
         onClose={closeMenu}
         onEditProfile={() => {
           closeMenu();
-          console.log("Edit Profile");
+          navigation.navigate('EditProfile');
         }}
         onEditDoor={() => {
           closeMenu();

@@ -39,6 +39,15 @@
           }
         }
       ],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Gwendolyn-Regular.ttf",
+            "./assets/fonts/Gwendolyn-Bold.ttf"
+          ]
+        }
+      ],
       "expo-web-browser",
       "expo-router"
     ],
