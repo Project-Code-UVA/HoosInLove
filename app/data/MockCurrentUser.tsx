@@ -21,8 +21,11 @@ export const MOCK_CURRENT_USER = {
   playlist: "Indie Study Mix",
   instagram: "not_jeffer10",
 
-  // ✅ ADD THESE
   gender: "Man",
   attractedTo: ["Women"],
   primarySocial: "Instagram",
+
+  // mock matches
+  loveMatchIds: ["1", "2", "4"],
+  friendMatchIds: ["6", "7"],
 };

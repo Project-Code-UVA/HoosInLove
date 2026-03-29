@@ -1,81 +1,131 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import ChatItem, { ChatItemProps } from '../../components/ChatItem';
-import Header from '../../components/header';
+import React from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
+import Header from '../../components/chatpage/ChatHeader';
+import ChatItem from '../../components/chatpage/ChatItem';
 import Footer from '../../components/footer';
 
-const chatData: ChatItemProps[] = [
-  {
-    id: 1,
-    name: 'Name #1',
-    message: 'Hey cutie, how are you doing?',
-    isFriend: false,
-  },
-  {
-    id: 2,
-    name: 'Name #2',
-    message: 'A very normal conversation',
-    isFriend: false,
-  },
-  {
-    id: 3,
-    name: 'Name #3',
-    message: 'A very normal conversation',
-    isFriend: true,
-  },
-  {
-    id: 4,
-    name: 'Name #4',
-    message: 'A very normal conversation',
-    isFriend: false,
-  },
-  {
-    id: 5,
-    name: 'Name #5',
-    message: 'A very normal conversation',
-    isFriend: true,
-  },
-  {
-    id: 6,
-    name: 'Name #6',
-    message: 'A very normal conversation',
-    isFriend: false,
-  },
-];
+import { MOCK_CURRENT_USER } from '../../data/MockCurrentUser';
+import { MOCK_PROFILES } from '../../data/mockProfiles';
 
 export default function Chats() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
+
+  const [filter, setFilter] = React.useState<'all' | 'love' | 'friends'>('all');
+
+  // get matches
+  const loveMatches = MOCK_PROFILES.filter((p) =>
+    MOCK_CURRENT_USER.loveMatchIds?.includes(p.id)
+  );
+
+  const friendMatches = MOCK_PROFILES.filter((p) =>
+    MOCK_CURRENT_USER.friendMatchIds?.includes(p.id)
+  );
+
+  // apply filter
+  const filteredProfiles =
+    filter === 'all'
+      ? [...loveMatches, ...friendMatches]
+      : filter === 'love'
+      ? loveMatches
+      : friendMatches;
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <Header />
 
-      {/* Main Content */}
       <View style={styles.content}>
-        {/* Title Row */}
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>Chats</Text>
-          <Text style={styles.filterText}>Filter friends</Text>
+        <View style={styles.topSection}>
+          <Text style={styles.pageTitle}>Chats</Text>
+          <View style={styles.divider} />
+
+          {/*  filter toggle */}
+          <View style={styles.filterRow}>
+            <TouchableOpacity onPress={() => setFilter('all')}>
+              <Text
+                style={[
+                  styles.filterText,
+                  filter === 'all' && styles.activeFilter,
+                ]}
+              >
+                All
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => setFilter('love')}>
+              <Text
+                style={[
+                  styles.filterText,
+                  filter === 'love' && styles.activeFilter,
+                ]}
+              >
+                Love
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => setFilter('friends')}>
+              <Text
+                style={[
+                  styles.filterText,
+                  filter === 'friends' && styles.activeFilter,
+                ]}
+              >
+                Friends
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Divider */}
-        <View style={styles.divider} />
+        {/* Chat list */}
+        <ScrollView
+          style={styles.chatList}
+          contentContainerStyle={styles.chatListContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {filteredProfiles.length > 0 ? (
+            filteredProfiles.map((profile) => {
+              const isLove =
+                MOCK_CURRENT_USER.loveMatchIds?.includes(profile.id);
+              const isFriend =
+                MOCK_CURRENT_USER.friendMatchIds?.includes(profile.id);
 
-        {/* Chat List */}
-        <ScrollView style={styles.chatList} showsVerticalScrollIndicator={false}>
-          {chatData.map((chat) => (
-            <ChatItem
-              key={chat.id}
-              {...chat}
-              onPress={() => (navigation as any).navigate('InsideChat', { name: chat.name })}
-            />
-          ))}
+              return (
+                <ChatItem
+                  key={profile.id}
+                  id={profile.id}
+                  name={profile.name}
+                  message={
+                    profile.quote || `Start chatting with ${profile.name}`
+                  }
+                  isLove={isLove}
+                  isFriend={isFriend}
+                  onPress={() =>
+                    navigation.navigate('InsideChat', {
+                      userId: profile.id,
+                      name: profile.name,
+                    })
+                  }
+                />
+              );
+            })
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>No chats yet</Text>
+              <Text style={styles.emptyText}>
+                Match with someone to start chatting
+              </Text>
+            </View>
+          )}
         </ScrollView>
       </View>
 
-      {/* Footer */}
       <Footer />
     </View>
   );
@@ -84,34 +134,76 @@ export default function Chats() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#EAF1F8',
   },
+
   content: {
     flex: 1,
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
+    paddingTop: 10, 
   },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 10,
+
+  topSection: {
     marginBottom: 10,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '500',
-    color: '#000000',
+
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#002561',
   },
+
+  divider: {
+    height: 2,
+    backgroundColor: '#002561',
+    width: '100%',
+    borderRadius: 2,
+    marginTop: 6,
+    marginBottom: 12,
+  },
+
+  filterRow: {
+    flexDirection: 'row',
+    gap: 18,
+    marginBottom: 8,
+  },
+
   filterText: {
     fontSize: 15,
-    color: 'rgba(0, 0, 0, 0.43)',
+    color: '#6B7280',
+    paddingBottom: 2,
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#E5E5E5',
-    marginBottom: 16,
+
+  activeFilter: {
+    color: '#002561',
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
+
   chatList: {
     flex: 1,
+  },
+
+  chatListContent: {
+    paddingBottom: 24,
+  },
+
+  emptyState: {
+    marginTop: 60,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#002561',
+    marginBottom: 8,
+  },
+
+  emptyText: {
+    fontSize: 15,
+    color: '#667085',
+    textAlign: 'center',
   },
 });

@@ -1,20 +1,19 @@
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import React, { useRef, useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { useRoute, useNavigation } from "@react-navigation/native";
-import { Avatar } from "../../components/ChatItem";
-import Footer from "../../components/footer";
+import { Avatar } from "../../components/chatpage/ChatItem";
 
 interface Message {
   id: number;
