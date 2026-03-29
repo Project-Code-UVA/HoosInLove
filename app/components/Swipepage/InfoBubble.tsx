@@ -149,7 +149,7 @@ export default function InfoBubble({
               adjustsFontSizeToFit
               minimumFontScale={0.85}
             >
-              {profile.name}, {profile.age}
+              {`${profile.name}, ${profile.age}`}
             </Text>
 
             <Text

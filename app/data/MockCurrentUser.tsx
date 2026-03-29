@@ -16,8 +16,13 @@ export const MOCK_CURRENT_USER = {
   lifestyle: ["Gym", "Student orgs", "Coffee runs"],
   loveLanguages: ["Quality Time", "Physical Touch", "Acts of Service"],
 
-  funFact: "at WXTJ Student Radio",
+  favoriteClub: "at WXTJ Student Radio",
   favoriteSpot: "the Downtown Mall",
   playlist: "Indie Study Mix",
   instagram: "not_jeffer10",
+
+  // ✅ ADD THESE
+  gender: "Man",
+  attractedTo: ["Women"],
+  primarySocial: "Instagram",
 };

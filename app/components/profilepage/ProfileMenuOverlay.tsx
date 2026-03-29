@@ -1,4 +1,3 @@
-// app/components/profile/ProfileMenuOverlay.tsx
 import React, { useEffect } from "react";
 import {
   Dimensions,
@@ -13,7 +12,6 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
 
 type Props = {
   visible: boolean;
@@ -31,7 +29,6 @@ const NAVY = "#002562";
 const BG = "#EAF1F8";
 const RED = "#C62828";
 const LIGHT_RED = "#FDEAEA";
-const LIGHT_BLUE = "#E7EDFF";
 
 const PANEL_W = Math.min(SCREEN_W * 0.60, 250);
 
@@ -80,7 +77,7 @@ export default function ProfileMenuOverlay({
             activeOpacity={0.8}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={30} color={NAVY} />
+            <Text style={styles.backArrow}>‹</Text>
           </TouchableOpacity>
 
           <Text style={styles.titleText}>Hoos In Love</Text>
@@ -93,14 +90,6 @@ export default function ProfileMenuOverlay({
             onPress={onEditProfile}
           >
             <Text style={styles.menuText}>Edit Profile</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={styles.menuItem}
-            onPress={onEditDoor}
-          >
-            <Text style={styles.menuText}>Edit Door</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -171,8 +160,15 @@ const styles = StyleSheet.create({
   backButton: {
     marginLeft: -8,
     marginRight: 18,
-    paddingVertical: 4,
-    paddingRight: 2,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+  },
+
+  backArrow: {
+    fontSize: 34,
+    lineHeight: 34,
+    fontWeight: "600",
+    color: NAVY,
   },
 
   titleText: {
