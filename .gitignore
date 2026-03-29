@@ -45,3 +45,6 @@ app-example
 # Android local paths (Paul's specific SDK)
 android/local.properties
 .env.idea/
+.idea/
+*.swp
+node_modules/
