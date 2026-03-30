@@ -9,7 +9,7 @@ export const MOCK_CURRENT_USER = {
   major: "Biomedical Engineering",
   pronouns: "he/him",
 
-  about:
+  bio:
     "Emotionally available 3–5 business days a year. Gym 5x a week. Therapy when needed. Cold brew in the bloodstream. Confidence on autopilot. Seeking a girl with a dog, a plan, and a 401k. Wi-Fi negotiable.",
 
   lookingFor: ["Long-term", "Something serious"],

@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -9,9 +9,9 @@ import {
   View,
 } from 'react-native';
 
+import { supabase } from "@/services/supabase";
 import PrettyBackground from '../../components/PrettyBackground';
 import EditProfileHeader from '../../components/profilepage/EditProfileHeader';
-import { MOCK_CURRENT_USER } from '../../data/MockCurrentUser';
 
 const NAVY = '#002562';
 const PAGE_BG = '#EAF1F8';
@@ -64,14 +64,54 @@ const SOCIAL_OPTIONS = ['Instagram', 'Discord', 'Snapchat'];
 
 export default function EditProfileScreen() {
   const navigation = useNavigation<any>();
-  const profile = MOCK_CURRENT_USER;
+  // const profile = MOCK_CURRENT_USER; // get rid of later
+
+  // start of database stuff (NOT TESTED MAY BE BROKEN!!!)
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("user_profile")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+      
+      if (data) {
+        setProfile(data);
+
+        setName(data.first_name || "");
+        setAge(data.age ? String(data.age) : "");
+        setFirstImpression(data.quote || "");
+        setPronouns(data.pronouns || "");
+        setMajor(data.major || "");
+        setBio(data.bio || "");
+        setClub(data.favorite_club || "");
+        setFavoriteSpot(data.favorite_spot || "");
+        setPlaylist(data.playlist || "");
+        setUsername(data.instagram || "");
+
+        setSelectedYear(data.school_year ? [data.school_year] : []);
+        setRelationship(data.relationship_type || []);
+        setLifestyle(data.lifestyle || []);
+        setLoveLanguages(data.love_language || []);
+        setGender(data.gender || null);
+      }
+    };
+
+    loadProfile();
+  }, []);
+  // end of database stuff (NOT TESTED MAY BE BROKEN!!!)
 
   const [name, setName] = useState(profile.name || '');
   const [age, setAge] = useState(profile.age ? String(profile.age) : '');
   const [firstImpression, setFirstImpression] = useState(profile.quote || '');
   const [pronouns, setPronouns] = useState(profile.pronouns || '');
   const [major, setMajor] = useState(profile.major || '');
-  const [bio, setBio] = useState(profile.about || '');
+  const [bio, setBio] = useState(profile.bio || '');
   const [club, setClub] = useState(profile.favoriteClub || '');
   const [favoriteSpot, setFavoriteSpot] = useState(profile.favoriteSpot || '');
   const [playlist, setPlaylist] = useState(profile.playlist || '');
@@ -117,9 +157,51 @@ export default function EditProfileScreen() {
     }
   };
 
-  const handleSave = () => {
-    console.log('save profile changes');
+  // const handleSave = () => {
+  //   console.log('save profile changes');
+  // };
+  // start of database stuff (NOT TESTED MAY BE BROKEN!!!)
+  const handleSave = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error("No user logged in");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("user_profile")
+        .update({
+          first_name: name,
+          age: Number(age),
+          school_year: selectedYear[0] || null,
+          bio: bio,
+          pronouns: pronouns,
+          major: major,
+          favorite_club: club,
+          favorite_spot: favoriteSpot,
+          playlist: playlist,
+          instagram: username,
+          gender: gender,
+          relationship_type: relationship,
+          lifestyle: lifestyle,
+          love_language: loveLanguages,
+        })
+        .eq("id", user.id);
+      
+      if (error) {
+        console.error("Update failed:", error);
+      }
+      else {
+        console.log("Profile updated!");
+        navigation.replace("ViewProfile"); // go back to view profile screen
+      }
+    }
+    catch (err) {
+      console.error("Save error:", err);
+    }
   };
+  // end of database stuff (NOT TESTED MAY BE BROKEN!!!)
 
   return (
     <PrettyBackground>
