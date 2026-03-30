@@ -1,3 +1,5 @@
+import { MOCK_CURRENT_USER } from "@/app/data/MockCurrentUser";
+import { supabase } from "@/services/supabase";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import React, { useRef, useState } from "react";
@@ -25,34 +27,125 @@ export default function InsideChat() {
   const route = useRoute();
   const navigation = useNavigation();
 
-  // Get the name passed from Chats screen (default to "User" if not provided)
-  const { name = "User" } = (route.params as { name?: string }) || {};
+  // UNTESTED backend integration!!
+  const { chatId, userId, name } = route.params as {chatId: number; userId: string; name: string };
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const response = await fetch(`https://your-api.com/api/chats/${chatId}/messages`); // REPLACE WITH API LINK
+        const data = await response.json();
+        // transform backend messages to local message interface
+        const formatted = data.map((m: any) => ({
+          id: m.message_id,
+          text: m.message_content,
+          isSent: m.sender_id === MOCK_CURRENT_USER.id // CHANGE ONCE REAL PROFILES WORKING
+        }));
+        setMessages(formatted);
+      }
+      catch (error) {
+        console.error("Failed to fetch messages", error);
+      }
+      finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMessages();
+  }, [chatId]);
+
+  // realtime updates for messages
+  React.useEffect(() => {
+    const channel = supabase
+      .channel(`chat-${chatId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `chat_id=eq.${chatId}`,
+        },
+        (payload) => {
+          const newMsg = payload.new;
+
+          const formatted = {
+            id: newMsg.message_id,
+            text: newMsg.message_content,
+            isSent: newMsg.sender_id === MOCK_CURRENT_USER.id, // replace later
+          };
+
+          setMessages((prev) => [...prev, formatted]);
+
+          setTimeout(() => {
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+        }
+      )
+      .subscribe();
+    
+      return () => {
+        supabase.removeChannel(channel);
+      };
+  }, [chatId]);
+
+  // // Get the name passed from Chats screen (default to "User" if not provided)
+  // const { name = "User" } = (route.params as { name?: string }) || {};
 
   const [messageInput, setMessageInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([
-    { id: 1, text: "Hi, How are you?", isSent: false },
-    { id: 2, text: "Hi, How are you?", isSent: true },
-    { id: 3, text: "Hi, How are you?", isSent: false },
-    { id: 4, text: "Hi, How are you?", isSent: true },
-    { id: 5, text: "Hi, How are you?", isSent: false },
-    { id: 6, text: "Hi, How are you?", isSent: true },
-  ]);
+  // const [messages, setMessages] = useState<Message[]>([
+  //   { id: 1, text: "Hi, How are you?", isSent: false },
+  //   { id: 2, text: "Hi, How are you?", isSent: true },
+  //   { id: 3, text: "Hi, How are you?", isSent: false },
+  //   { id: 4, text: "Hi, How are you?", isSent: true },
+  //   { id: 5, text: "Hi, How are you?", isSent: false },
+  //   { id: 6, text: "Hi, How are you?", isSent: true },
+  // ]);
   const scrollViewRef = useRef<ScrollView>(null);
 
-  const handleSendMessage = () => {
-    if (messageInput.trim()) {
-      const newMessage: Message = {
-        id: messages.length + 1,
-        text: messageInput,
-        isSent: true,
-      };
-      setMessages([...messages, newMessage]);
+  const handleSendMessage = async () => {
+    if (!messageInput.trim()) return;
+
+    const newMessage = {
+      sender_id: MOCK_CURRENT_USER.id, // REPLACE LATER
+      message_content: messageInput,
+    };
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase.from("messages").insert({
+        chat_id: chatId,
+        sender_id: user.id,
+        message_content: messageInput,
+      });
+
+      if (error) {
+        console.error("send failed:", error);
+      }
+
       setMessageInput("");
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
     }
+    catch (err) {
+      console.error("Send error:", err);
+    }
+    // if (messageInput.trim()) {
+    //   const newMessage: Message = {
+    //     id: messages.length + 1,
+    //     text: messageInput,
+    //     isSent: true,
+    //   };
+    //   setMessages([...messages, newMessage]);
+    //   setMessageInput("");
+    //   setTimeout(() => {
+    //     scrollViewRef.current?.scrollToEnd({ animated: true });
+    //   }, 100);
+    // }
   };
+    // end of UNTESTED backend integration!!
 
   const renderMessageBubble = (message: Message) => {
     if (message.isSent) {

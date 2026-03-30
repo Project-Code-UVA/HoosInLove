@@ -12,30 +12,130 @@ import Header from '../../components/chatpage/ChatHeader';
 import ChatItem from '../../components/chatpage/ChatItem';
 import Footer from '../../components/footer';
 
-import { MOCK_CURRENT_USER } from '../../data/MockCurrentUser';
-import { MOCK_PROFILES } from '../../data/mockProfiles';
+import { supabase } from "@/services/supabase";
 
 export default function Chats() {
   const navigation = useNavigation<any>();
 
   const [filter, setFilter] = React.useState<'all' | 'love' | 'friends'>('all');
 
-  // get matches
-  const loveMatches = MOCK_PROFILES.filter((p) =>
-    MOCK_CURRENT_USER.loveMatchIds?.includes(p.id)
-  );
+  // UNTESTED BACKEND INTEGRATION!!
+  const [chats, setChats] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
-  const friendMatches = MOCK_PROFILES.filter((p) =>
-    MOCK_CURRENT_USER.friendMatchIds?.includes(p.id)
-  );
+  const fetchChats = React.useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      // Step 1: get matches involving current user
+      const { data: matches, error: matchError } = await supabase
+        .from("matches")
+        .select("*")
+        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
+      if (matchError) throw matchError;
+
+      // step 2: get chats tied to those matches
+      const matchIds = matches.map((m) => m.match_id);
+
+      const { data: chatsData, error: chatError } = await supabase
+        .from("chat")
+        .select("*")
+        .in("match_id", matchIds);
+      if (chatError) throw chatError;
+
+      // step 3: build UI-friendly objects
+      const formattedChats = await Promise.all(
+        chatsData.map(async (chat) => {
+          const match = matches.find((m) => m.match_id === chat.match_id);
+
+          const otherUserId = 
+            match.user1_id === user.id ? match.user2_id : match.user1_id;
+
+          // get other user's profiles
+          const { data: profile } = await supabase
+            .from("user_profile")
+            .select("id, first_name, bio")
+            .eq("id", otherUserId)
+            .single();
+
+          // get last message
+          const { data: messages } = await supabase
+            .from("messages")
+            .select("*")
+            .eq("chat_id", chat.chat_id)
+            .order("timestamp", {ascending: false})
+            .limit(1);
+
+          return {
+            chat_id: chat.chat_id,
+            is_friend: chat.is_friend,
+            other_user: {
+              id: profile?.id,
+              name: profile?.first_name,
+              quote: profile?.bio,
+            },
+            last_message: messages?.[0]?.message_content || null,
+          };
+        })
+      );
+
+      setChats(formattedChats);
+    }
+    catch (error) {
+      console.error("failed to fetch chats", error);
+    }
+    finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // initial fetch  
+  React.useEffect(() => {
+    fetchChats();
+  }, [fetchChats]);
+
+    // realtime updates
+  React.useEffect(() => {
+    const channel = supabase
+      .channel("chat-list")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages" },
+        () => {
+          fetchChats();
+        }
+      )
+      .subscribe();
+    
+      return () => {
+        supabase.removeChannel(channel);
+      };
+  }, [fetchChats]);
+
+  // get matches
+  // const loveMatches = MOCK_PROFILES.filter((p) =>
+  //   MOCK_CURRENT_USER.loveMatchIds?.includes(p.id)
+  // );
+
+  // const friendMatches = MOCK_PROFILES.filter((p) =>
+  //   MOCK_CURRENT_USER.friendMatchIds?.includes(p.id)
+  // );
 
   // apply filter
-  const filteredProfiles =
-    filter === 'all'
-      ? [...loveMatches, ...friendMatches]
-      : filter === 'love'
-      ? loveMatches
-      : friendMatches;
+  const filteredChats =
+    filter === "all"
+      ? chats
+      : filter === "love"
+      ? chats.filter(c => !c.is_friend)
+      : chats.filter(c => c.is_friend);
+
+  // const filteredProfiles =
+  //   filter === 'all'
+  //     ? [...loveMatches, ...friendMatches]
+  //     : filter === 'love'
+  //     ? loveMatches
+  //     : friendMatches;
 
   return (
     <View style={styles.container}>
@@ -89,7 +189,31 @@ export default function Chats() {
           contentContainerStyle={styles.chatListContent}
           showsVerticalScrollIndicator={false}
         >
-          {filteredProfiles.length > 0 ? (
+          {filteredChats.length > 0 ? (
+            filteredChats.map(chat => (
+              <ChatItem
+                key={chat.chat_id}
+                id={chat.other_user.id}
+                name={chat.other_user.name}
+                message={chat.last_message || `Start chatting with ${chat.other_user.name}`}
+                isLove={!chat.is_friend}
+                isFriend={chat.is_friend}
+                onPress={() =>
+                  navigation.navigate("InsideChat", {
+                    chatId: chat.chat_id,
+                    userId: chat.other_user.id,
+                    name: chat.other_user.name,
+                  })
+                }
+              />
+            ))
+          ) : ( // if no matches yet, show empty chat view
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>No chats yet</Text>
+              <Text style={styles.emptyText}>Match with someone to start chatting!</Text>
+            </View>
+          )}
+          {/* {filteredProfiles.length > 0 ? (
             filteredProfiles.map((profile) => {
               const isLove =
                 MOCK_CURRENT_USER.loveMatchIds?.includes(profile.id);
@@ -122,7 +246,7 @@ export default function Chats() {
                 Match with someone to start chatting
               </Text>
             </View>
-          )}
+          )} */}
         </ScrollView>
       </View>
 
