@@ -1,3 +1,4 @@
+// src/screens/DatingPreferences1.tsx
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -25,6 +26,7 @@ const DatingPreferences1: React.FC = () => {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.card}>
           <Text style={styles.title}>Your Preferences</Text>
+          
           <Text style={styles.label}>What Is Your Gender?</Text>
           <View style={styles.row}>
             {['Woman', 'Man', 'Other'].map(opt => (
@@ -34,10 +36,13 @@ const DatingPreferences1: React.FC = () => {
               </TouchableOpacity>
             ))}
           </View>
+          
           <Text style={styles.label}>What Are Your Pronouns?</Text>
-          <TextInput style={styles.input} value={pronouns} onChangeText={setPronouns} placeholder="ex. she/her/hers" />
+          <TextInput style={styles.input} value={pronouns} onChangeText={setPronouns} placeholder="ex. she/her/hers (optional)" />
+          
           <Text style={styles.label}>What’s Your Age?</Text>
-          <TextInput style={styles.input} value={age} onChangeText={setAge} keyboardType="numeric" />
+          <TextInput style={styles.input} value={age} onChangeText={setAge} placeholder="ex. 20" keyboardType="numeric" />
+          
           <Text style={styles.label}>Which Genders Are You Attracted To?</Text>
           <View style={styles.row}>
             {['Women', 'Men', 'Other'].map(opt => (
@@ -47,6 +52,7 @@ const DatingPreferences1: React.FC = () => {
               </TouchableOpacity>
             ))}
           </View>
+          
           <Text style={styles.label}>What Year Are You?</Text>
           <View style={styles.rowWrap}>
             {['1st Year', '2nd Year', '3rd Year', '4th Year', 'Grad Student', 'Other'].map(opt => (
@@ -65,20 +71,20 @@ const DatingPreferences1: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { paddingVertical: 50, alignItems: 'center' },
-  card: { width: '85%', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 20, elevation: 5 },
-  title: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 },
-  label: { marginTop: 12, marginBottom: 6, fontWeight: '600' },
-  input: { backgroundColor: '#C2E3FF', borderRadius: 8, padding: 10 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' },
+  card: { width: '85%', backgroundColor: '#FFFFFF', borderRadius: 8, padding: 20, elevation: 5 },
+  title: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 15 },
+  label: { marginTop: 12, marginBottom: 8, fontWeight: '600', fontSize: 13 },
+  input: { backgroundColor: '#C2E3FF', borderRadius: 4, padding: 10, fontSize: 13, borderColor: '#A9D6FF', borderWidth: 1 },
+  row: { flexDirection: 'row', flexWrap: 'wrap' },
   rowWrap: { flexDirection: 'row', flexWrap: 'wrap' },
   optionRow: { flexDirection: 'row', alignItems: 'center', marginRight: 16, marginBottom: 8 },
-  circle: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: '#003366', marginRight: 6 },
-  circleSelected: { backgroundColor: '#003366' },
-  square: { width: 18, height: 18, borderRadius: 4, borderWidth: 2, borderColor: '#003366', marginRight: 6 },
-  squareSelected: { backgroundColor: '#003366' },
-  optionText: { fontSize: 14 },
-  continueButton: { backgroundColor: '#F9C27A', borderRadius: 8, paddingVertical: 10, marginTop: 18 },
-  continueText: { textAlign: 'center', fontWeight: 'bold' },
+  circle: { width: 14, height: 14, borderRadius: 7, borderWidth: 1, borderColor: '#555', marginRight: 6 },
+  circleSelected: { backgroundColor: '#87CEEB', borderColor: '#87CEEB' },
+  square: { width: 14, height: 14, borderRadius: 2, borderWidth: 1, borderColor: '#555', marginRight: 6 },
+  squareSelected: { backgroundColor: '#87CEEB', borderColor: '#87CEEB' },
+  optionText: { fontSize: 13 },
+  continueButton: { backgroundColor: '#F9C27A', borderRadius: 4, paddingVertical: 12, marginTop: 18 },
+  continueText: { textAlign: 'center', fontWeight: 'bold', fontSize: 14, color: '#333' },
 });
 
 export default DatingPreferences1;

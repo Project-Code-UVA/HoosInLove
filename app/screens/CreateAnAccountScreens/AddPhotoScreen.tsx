@@ -1,3 +1,4 @@
+// src/screens/AddPhotosScreen.tsx
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, Image, Alert } from 'react-native';
@@ -44,7 +45,7 @@ const AddPhotosScreen: React.FC = () => {
             {photos.map((photo, index) => (
               <TouchableOpacity key={index} style={styles.photoBox} onPress={() => pickImage(index)} activeOpacity={0.7}>
                 {photo ? <Image source={{ uri: photo }} style={styles.photo} /> : (
-                  <View style={styles.placeholder}><Ionicons name="camera-outline" size={40} color="#87CEEB" /></View>
+                  <View style={styles.placeholder}><Ionicons name="camera-outline" size={30} color="#87CEEB" /></View>
                 )}
               </TouchableOpacity>
             ))}
@@ -60,14 +61,14 @@ const AddPhotosScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 },
-  card: { width: '85%', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 20, elevation: 5 },
-  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
-  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20 },
+  card: { width: '85%', backgroundColor: '#FFFFFF', borderRadius: 8, padding: 20, elevation: 5 },
+  title: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
+  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 10 },
   photoBox: { width: '48%', aspectRatio: 4/5, marginBottom: 12, borderRadius: 8, overflow: 'hidden' },
-  placeholder: { flex: 1, backgroundColor: '#C2E3FF', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#87CEEB', borderStyle: 'dashed', borderRadius: 8 },
+  placeholder: { flex: 1, backgroundColor: '#C2E3FF', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#87CEEB', borderStyle: 'dashed', borderRadius: 8 },
   photo: { width: '100%', height: '100%' },
-  continueButton: { backgroundColor: '#F9C27A', borderRadius: 6, paddingVertical: 14, alignItems: 'center' },
-  continueText: { fontWeight: 'bold', fontSize: 16 },
+  continueButton: { backgroundColor: '#F9C27A', borderRadius: 4, paddingVertical: 12, alignItems: 'center' },
+  continueText: { fontWeight: 'bold', fontSize: 14, color: '#333' },
 });
 
 export default AddPhotosScreen;

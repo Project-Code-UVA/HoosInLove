@@ -1,3 +1,4 @@
+// src/screens/DatingPreferences3.tsx
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -32,14 +33,18 @@ const DatingPreferences3: React.FC = () => {
               </TouchableOpacity>
             ))}
           </View>
-          <Text style={styles.label}>What’s your username?</Text>
+          <Text style={styles.label}>What is your username?</Text>
           <TextInput style={styles.input} value={username} onChangeText={setUsername} placeholder="write username here" />
-          <Text style={styles.label}>What’s Your Major?</Text>
+          
+          <Text style={styles.label}>What is Your Major?</Text>
           <TextInput style={styles.input} value={major} onChangeText={setMajor} placeholder="ex. Computer Science" />
+          
           <Text style={styles.label}>Favorite Club/Extracurricular?</Text>
           <TextInput style={styles.input} value={club} onChangeText={setClub} placeholder="ex. WXTJ Student Radio" />
+          
           <Text style={styles.label}>Favorite Cville Spot?</Text>
           <TextInput style={styles.input} value={cvilleSpot} onChangeText={setCvilleSpot} placeholder="ex. Downtown Mall" />
+          
           <TouchableOpacity style={styles.continueButton} onPress={handleContinue}><Text style={styles.continueText}>Continue</Text></TouchableOpacity>
         </View>
       </ScrollView>
@@ -47,19 +52,20 @@ const DatingPreferences3: React.FC = () => {
   );
 };
 
+// ... Use identical input/layout styles from DatingPreferences1
 const styles = StyleSheet.create({
   container: { paddingVertical: 50, alignItems: 'center' },
-  card: { width: '85%', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 20, elevation: 5 },
-  title: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 },
-  label: { marginTop: 12, marginBottom: 6, fontWeight: '600' },
-  row: { flexDirection: 'row', justifyContent: 'space-between' },
-  optionRow: { flexDirection: 'row', alignItems: 'center', marginRight: 16, marginBottom: 8 },
-  circle: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: '#003366', marginRight: 6 },
-  circleSelected: { backgroundColor: '#003366' },
-  optionText: { fontSize: 14 },
-  input: { backgroundColor: '#C2E3FF', borderRadius: 8, padding: 10 },
-  continueButton: { backgroundColor: '#F9C27A', borderRadius: 8, paddingVertical: 10, marginTop: 18 },
-  continueText: { textAlign: 'center', fontWeight: 'bold' },
+  card: { width: '85%', backgroundColor: '#FFFFFF', borderRadius: 8, padding: 20, elevation: 5 },
+  title: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 15 },
+  label: { marginTop: 12, marginBottom: 8, fontWeight: '600', fontSize: 13 },
+  row: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 5 },
+  optionRow: { flexDirection: 'row', alignItems: 'center', marginRight: 12, marginBottom: 8 },
+  circle: { width: 14, height: 14, borderRadius: 7, borderWidth: 1, borderColor: '#555', marginRight: 6 },
+  circleSelected: { backgroundColor: '#87CEEB', borderColor: '#87CEEB' },
+  optionText: { fontSize: 13 },
+  input: { backgroundColor: '#C2E3FF', borderRadius: 4, padding: 10, fontSize: 13, borderColor: '#A9D6FF', borderWidth: 1 },
+  continueButton: { backgroundColor: '#F9C27A', borderRadius: 4, paddingVertical: 12, marginTop: 18 },
+  continueText: { textAlign: 'center', fontWeight: 'bold', fontSize: 14, color: '#333' },
 });
 
 export default DatingPreferences3;

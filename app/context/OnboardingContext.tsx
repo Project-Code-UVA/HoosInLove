@@ -1,8 +1,10 @@
-import React, { createContext, useContext, useState } from 'react';
+// src/context/OnboardingContext.tsx
+import React, { createContext, useState, useContext } from 'react';
 
-export interface OnboardingData {
+type OnboardingData = {
   firstName: string;
   email: string;
+  photos: (string | null)[];
   gender: string | null;
   pronouns: string;
   age: string;
@@ -16,27 +18,28 @@ export interface OnboardingData {
   major: string;
   club: string;
   cvilleSpot: string;
-  photos: (string | null)[];
-}
-
-interface OnboardingContextType {
-  data: OnboardingData;
-  updateData: (newData: Partial<OnboardingData>) => void;
-}
-
-const initialData: OnboardingData = {
-  firstName: '', email: '', gender: null, pronouns: '', age: '',
-  attractedTo: [], year: [], relationship: [], lifestyle: [],
-  loveLanguages: [], primarySocial: null, username: '', major: '',
-  club: '', cvilleSpot: '', photos: [null, null, null, null, null, null]
 };
 
-const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
+type OnboardingContextType = {
+  data: OnboardingData;
+  updateData: (newData: Partial<OnboardingData>) => void;
+};
+
+const defaultData: OnboardingData = {
+  firstName: '', email: '', photos: [null, null, null, null, null, null],
+  gender: null, pronouns: '', age: '', attractedTo: [], year: [],
+  relationship: [], lifestyle: [], loveLanguages: [], primarySocial: null,
+  username: '', major: '', club: '', cvilleSpot: ''
+};
+
+const OnboardingContext = createContext<OnboardingContextType>({
+  data: defaultData,
+  updateData: () => {},
+});
 
 export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [data, setData] = useState<OnboardingData>(initialData);
+  const [data, setData] = useState<OnboardingData>(defaultData);
   const updateData = (newData: Partial<OnboardingData>) => setData(prev => ({ ...prev, ...newData }));
-
   return (
     <OnboardingContext.Provider value={{ data, updateData }}>
       {children}
@@ -44,8 +47,4 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   );
 };
 
-export const useOnboarding = () => {
-  const context = useContext(OnboardingContext);
-  if (!context) throw new Error('useOnboarding must be used within an OnboardingProvider');
-  return context;
-};
+export const useOnboarding = () => useContext(OnboardingContext);
