@@ -1,8 +1,8 @@
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Header from '../components/chatpage/ChatHeader';
 import Footer from '../components/footer';
-import Header from '../components/header';
 
 export default function BaseScreen() {
   const navigation = useNavigation<any>();

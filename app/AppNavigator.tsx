@@ -1,6 +1,5 @@
 // app/AppNavigator.tsx
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useFonts } from 'expo-font';
 import React from 'react';
 
 import BaseScreen from './screens/BaseScreen';
@@ -25,6 +24,8 @@ import SwipeHome from './screens/SwipePageScreens/SwipeHome';
 
 // PROFILE SCREEN
 import ProfileScreen from './screens/ProfilePageScreens/ProfileScreen';
+import EditProfileScreen from './screens/ProfilePageScreens/EditProfileScreen';
+import EditPhotosScreen from './screens/ProfilePageScreens/EditPhotosScreen';
 
 export type RootStackParamList = {
   SwipeHome: undefined;
@@ -42,19 +43,14 @@ export type RootStackParamList = {
   Chats: undefined;
   InsideChat: { name: string };
 
-  ViewProfile: { profile: any | null };
+  ViewProfile: { profile?: any | null };
+  EditProfile: undefined;
+  EditPhotos: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
-  const [fontsLoaded] = useFonts({
-    Gwendolyn: require('../assets/fonts/Gwendolyn-Regular.ttf'),
-    GwendolynBold: require('../assets/fonts/Gwendolyn-Bold.ttf'),
-  });
-
-  if (!fontsLoaded) return null;
-
   return (
     <Stack.Navigator
       initialRouteName="SwipeHome"
@@ -69,6 +65,8 @@ export default function AppNavigator() {
 
       {/* PROFILE SCREEN */}
       <Stack.Screen name="ViewProfile" component={ProfileScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="EditPhotos" component={EditPhotosScreen} />
 
       {/* CREATE ACCOUNT FLOW */}
       <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />

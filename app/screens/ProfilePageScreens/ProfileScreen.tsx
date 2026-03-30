@@ -1,22 +1,23 @@
-import React, { useState } from "react";
-import { useNavigation, NavigationProp } from "@react-navigation/native";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
+import React, { useEffect, useState } from "react";
 import {
+  Image,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   View,
-  Image,
 } from "react-native";
 
-import ProfileHeader from "../../components/profilepage/ProfileHeader";
-import ProfileMenuOverlay from "../../components/profilepage/ProfileMenuOverlay";
-import InfoBubble from "../../components/Swipepage/InfoBubble";
-import ProfileTagSection from "../../components/profilepage/ProfileTagSection";
-import ProfileInfoBlock from "../../components/profilepage/ProfileInfoBlock";
-import ProfilePhotoCard from "../../components/profilepage/ProfilePhotoCard";
+import { supabase } from "@/services/supabase";
 import Footer from "../../components/footer";
-import { MOCK_CURRENT_USER } from "../../data/MockCurrentUser";
+import ProfileHeader from "../../components/profilepage/ProfileHeader";
+import ProfileInfoBlock from "../../components/profilepage/ProfileInfoBlock";
+import ProfileMenuOverlay from "../../components/profilepage/ProfileMenuOverlay";
+import ProfilePhotoCard from "../../components/profilepage/ProfilePhotoCard";
+import ProfileTagSection from "../../components/profilepage/ProfileTagSection";
+import InfoBubble from "../../components/Swipepage/InfoBubble";
+
 
 // Year Images
 import firstYearImg from "../../../assets/images/account_year_images/1st_year_rotunda.png";
@@ -28,6 +29,7 @@ import hooImg from "../../../assets/images/account_year_images/Hoo_rotunda.png";
 
 type RootStackParamList = {
   BaseScreen: undefined;
+  EditProfile: undefined;
 };
 
 const NAVY = "#002562";
@@ -52,11 +54,56 @@ function getYearImage(yearLabel?: string) {
 }
 
 export default function ProfileScreen() {
-  const profile = MOCK_CURRENT_USER;
+  // const profile = MOCK_CURRENT_USER; // get rid of later
+  const [profile, setProfile] = useState<any>(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const closeMenu = () => setMenuVisible(false);
+  
+  // start of database stuff (NOT TESTED MAY BE BROKEN!!!)
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("user_profile")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+      
+      if (error) {
+        console.error("Error fetching profile:", error);
+      } 
+      else {
+        setProfile({
+          name: `${data.first_name ?? ""}`,
+          age: data.age ?? 0,
+          yearLabel: data.school_year,
+          pronouns: data.pronouns,
+          major: data.major,
+          about: data.bio,
+          favoriteClub: data.favorite_club,
+          favoriteSpot: data.favorite_spot,
+          playlist: data.playlist,
+          instagram: data.instagram,
+          lifestyle: data.lifestyle || [],
+          lookingFor: data.relationship_type || [],
+          loveLanguages: data.love_language || [],
+          gender: data.gender,
+          photoUri: null, // add later
+        });
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  if (!profile) {
+    return <Text>Loading...</Text>;
+  }
+  // end of database stuff (NOT TESTED MAY BE BROKEN!!!)
 
   return (
     <View style={styles.screen}>
@@ -109,10 +156,10 @@ export default function ProfileScreen() {
 
             <ProfilePhotoCard photoUri={profile.photoUri} />
 
-            {!!profile.about && (
+            {!!profile.bio && (
               <>
                 <Text style={styles.sectionTitle}>About me:</Text>
-                <Text style={styles.aboutText}>{profile.about}</Text>
+                <Text style={styles.aboutText}>{profile.bio}</Text>
               </>
             )}
 
@@ -127,7 +174,7 @@ export default function ProfileScreen() {
             <View style={styles.firstBlockSpacing}>
               <ProfileInfoBlock
                 label="When I’m not in class, I’m..."
-                value={profile.funFact}
+                value={profile.favoriteClub}
                 variant="tan"
               />
             </View>
@@ -160,7 +207,7 @@ export default function ProfileScreen() {
         onClose={closeMenu}
         onEditProfile={() => {
           closeMenu();
-          console.log("Edit Profile");
+          navigation.navigate('EditProfile');
         }}
         onEditDoor={() => {
           closeMenu();
