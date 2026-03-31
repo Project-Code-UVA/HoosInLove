@@ -43,10 +43,10 @@ function getYearImage(yearLabel?: string) {
 
   const normalized = yearLabel.toLowerCase().trim();
 
-  if (normalized.includes("1st")) return firstYearImg;
-  if (normalized.includes("2nd")) return secondYearImg;
-  if (normalized.includes("3rd")) return thirdYearImg;
-  if (normalized.includes("4th")) return fourthYearImg;
+  if (normalized.includes("1st year")) return firstYearImg;
+  if (normalized.includes("2nd year")) return secondYearImg;
+  if (normalized.includes("3rd year")) return thirdYearImg;
+  if (normalized.includes("4th year")) return fourthYearImg;
   if (normalized.includes("grad")) return gradImg;
   if (normalized.includes("hoo")) return hooImg;
 
