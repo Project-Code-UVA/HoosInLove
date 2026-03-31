@@ -1,7 +1,14 @@
-// app/screens/SwipePageScreens/SwipeHome.tsx
+import { useNavigation } from "@react-navigation/native";
 import { supabase } from "@/services/supabase";
 import React, { useEffect, useMemo, useState } from "react";
-import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
+import {
+  Dimensions,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   Easing,
@@ -16,11 +23,12 @@ import { Profile } from "../../data/Profile";
 import Footer from "../../components/footer";
 import ProgressBar from "../../components/Swipepage/BottomProgressBar";
 import InfoBubble from "../../components/Swipepage/InfoBubble";
+import KnockHearts from "../../components/Swipepage/KnockHearts";
 
 // to be removed LATER:
 import { MOCK_PROFILES } from "../../data/mockProfiles";
 
-const BACKEND_BASE_URL = "http://localhost:3000"; // Change this to your backend URL in production
+const BACKEND_BASE_URL = "http://localhost:3000";
 
 const { width: W, height: H } = Dimensions.get("window");
 
@@ -53,15 +61,18 @@ const COMMIT_EASE = Easing.out(Easing.cubic);
 const SPRING_K = 0.02;
 
 type BarDir = "ltr" | "rtl";
+type SwipeMode = "love" | "friend";
 
 export default function SwipeHome() {
+  const navigation = useNavigation<any>();
+
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoadingProfiles, setIsLoadingProfiles] = useState<boolean>(true);
-  const n = profiles.length;
+  const [mode, setMode] = useState<SwipeMode>("love");
 
+  const n = profiles.length;
   const [index, setIndex] = useState(0);
 
-  // fetch profiles from matching algorithm endpoint
   const fetchProfiles = async () => {
     setIsLoadingProfiles(true);
     try {
@@ -116,7 +127,6 @@ export default function SwipeHome() {
     }
   };
 
-  // ensure profiles load when screen mounts, and re-fetch after auth state changes
   useEffect(() => {
     fetchProfiles();
 
@@ -133,8 +143,7 @@ export default function SwipeHome() {
     };
   }, []);
 
-  // record user's knock
-  const recordKnock = async (targetId: string) => {
+  const recordKnock = async (targetId: string, isFriend: boolean) => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -145,6 +154,7 @@ export default function SwipeHome() {
       user_1_id: user.id,
       user_2_id: targetId,
       status: "knock",
+      is_friend: isFriend,
     });
 
     if (error) {
@@ -152,14 +162,11 @@ export default function SwipeHome() {
     }
   };
 
-  // swipe progress bar (the loading/hold bar, NOT the navy handle)
   const [barDir, setBarDir] = useState<BarDir>("ltr");
   const [showSwipeBar, setShowSwipeBar] = useState(false);
 
-  // door “open/zoomed” state (bubble becomes draggable here)
   const [isOpen, setIsOpen] = useState(false);
 
-  // measure footer height so bubble sits perfectly above it
   const [footerH, setFooterH] = useState(0);
   const BUBBLE_GAP = 28;
   const bubbleBottom = footerH + BUBBLE_GAP;
@@ -196,7 +203,6 @@ export default function SwipeHome() {
   const showSwipeBarSV = useSharedValue<0 | 1>(0);
   const barDirSV = useSharedValue<0 | 1>(0);
 
-  // zoom animation values
   const zoomScale = useSharedValue(1);
   const zoomTx = useSharedValue(0);
   const zoomTy = useSharedValue(0);
@@ -224,23 +230,19 @@ export default function SwipeHome() {
   };
 
   /* -------------------- ZOOM TARGET -------------------- */
-  // Door rect on screen (DoorCurrent page when translateX === 0)
+
   const doorCenterX = initialX + doorLeft + DOOR_W / 2;
   const doorCenterY = BG_TOP + DOOR_TOP + DOOR_H / 2;
 
-  // Scale so the door basically fills the screen
   const targetScale = Math.min(W / DOOR_W, H / DOOR_H) * 1.02;
 
-  // RN scales around center by default
   const originX = W / 2;
   const originY = H / 2 - 25;
 
-  // center-origin translation
   const targetTx = targetScale * (originX - doorCenterX);
   const targetTy = targetScale * (originY - doorCenterY);
 
   useEffect(() => {
-    // when opening: snap carousel to center and hide swipe progress bar
     if (isOpen) {
       translateX.value = withSpring(0, SNAP_CFG);
       dragProgress.value = withTiming(0, { duration: 120 });
@@ -268,7 +270,6 @@ export default function SwipeHome() {
     transform: [{ translateX: translateX.value }],
   }));
 
-  // whole scene zooms when isOpen
   const sceneZoomStyle = useAnimatedStyle(() => ({
     transform: [
       { scale: zoomScale.value },
@@ -310,11 +311,10 @@ export default function SwipeHome() {
 
   /* -------------------- GESTURES -------------------- */
 
-  // Horizontal swipe (carousel)
   const pan = Gesture.Pan()
     .enabled(!isOpen)
     .minDistance(6)
-    .activeOffsetY([-12, 12]) // ignore vertical drift
+    .activeOffsetY([-12, 12])
     .onBegin(() => {
       if (isCommitting.value) return;
       dragProgress.value = 0;
@@ -356,7 +356,6 @@ export default function SwipeHome() {
       dragProgress.value = withTiming(0, { duration: 120 });
     });
 
-  // door hit-test (worklet-safe)
   const isPointInDoor = (x: number, y: number) => {
     "worklet";
     return (
@@ -367,7 +366,6 @@ export default function SwipeHome() {
     );
   };
 
-  // Double tap on the door → open
   const doorDoubleTap = Gesture.Tap()
     .enabled(!isOpen)
     .numberOfTaps(2)
@@ -378,30 +376,6 @@ export default function SwipeHome() {
       }
     });
 
-  // Knock on open door (to give like)
-  const knockGesture = Gesture.Tap()
-    .enabled(isOpen)
-    .numberOfTaps(4)
-    .maxDelay(250)
-    .onStart(() => {
-      if (profile) {
-        runOnJS(recordKnock)(profile.id);
-      }
-    });
-
-  // Vertical swipe DOWN to close (anywhere)
-  const closePan = Gesture.Pan()
-    .enabled(isOpen)
-    .minDistance(10)
-    .activeOffsetX([-20, 20]) // ignore sideways
-    .activeOffsetY([10, 9999]) // only activates if user moves DOWN
-    .onEnd((e) => {
-      if (e.translationY > 70 || e.velocityY > 900) {
-        runOnJS(setIsOpen)(false);
-      }
-    });
-
-  // When closed: both pan + double tap can run; tap won't interfere with pan
   const closedGesture = Gesture.Simultaneous(pan, doorDoubleTap);
 
   /* -------------------- RENDER -------------------- */
@@ -409,16 +383,9 @@ export default function SwipeHome() {
   return (
     <View style={styles.screen}>
       <View style={styles.viewport}>
-        <GestureDetector
-          gesture={
-            isOpen
-              ? Gesture.Simultaneous(closePan, knockGesture)
-              : closedGesture
-          }
-        >
+        <GestureDetector gesture={closedGesture}>
           <Animated.View style={[StyleSheet.absoluteFill, sceneZoomStyle]}>
             <Animated.View style={[styles.strip, stripStyle]}>
-              {/* DoorPrev */}
               <View style={[styles.page, { left: -2 * W }]}>
                 <View style={artOffsetStyle}>
                   <Image
@@ -432,7 +399,6 @@ export default function SwipeHome() {
                 </View>
               </View>
 
-              {/* WallPrev */}
               <View style={[styles.page, { left: -W }]}>
                 <View style={artOffsetStyle}>
                   <Image
@@ -446,7 +412,6 @@ export default function SwipeHome() {
                 </View>
               </View>
 
-              {/* DoorCurrent */}
               <View style={[styles.page, { left: 0 }]}>
                 <View style={artOffsetStyle}>
                   <Image
@@ -457,11 +422,9 @@ export default function SwipeHome() {
                       { width: scaledW, height: scaledH, top: BG_TOP },
                     ]}
                   />
-                  {/* ✅ no Pressable door zone */}
                 </View>
               </View>
 
-              {/* WallNext */}
               <View style={[styles.page, { left: W }]}>
                 <View style={artOffsetStyle}>
                   <Image
@@ -475,7 +438,6 @@ export default function SwipeHome() {
                 </View>
               </View>
 
-              {/* DoorNext */}
               <View style={[styles.page, { left: 2 * W }]}>
                 <View style={artOffsetStyle}>
                   <Image
@@ -493,8 +455,69 @@ export default function SwipeHome() {
         </GestureDetector>
       </View>
 
-      {/* Info Bubble */}
+      <KnockHearts
+        enabled={isOpen}
+        onComplete={() => {
+          if (profile) {
+            recordKnock(profile.id, mode === "friend");
+          }
+          console.log("GO TO NEXT SCREEN"); // navigation.navigate("YourNextScreen");
+        }}
+      />
+
       <View style={styles.overlay} pointerEvents="box-none">
+        <View style={styles.topControls} pointerEvents="box-none">
+          {isOpen && (
+            <TouchableOpacity
+              style={styles.backButton}
+              activeOpacity={0.8}
+              onPress={() => setIsOpen(false)}
+            >
+              <Text style={styles.backButtonText}>{"<"}</Text>
+            </TouchableOpacity>
+          )}
+
+          <View style={styles.modeToggleWrap} pointerEvents="auto">
+            <View style={styles.modePill}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={[
+                  styles.modeOption,
+                  mode === "love" && { backgroundColor: "#FF5C8A" },
+                ]}
+                onPress={() => setMode("love")}
+              >
+                <Text
+                  style={[
+                    styles.modeText,
+                    mode === "love" && styles.modeTextActive,
+                  ]}
+                >
+                  Love
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={[
+                  styles.modeOption,
+                  mode === "friend" && { backgroundColor: "#C8A97E" },
+                ]}
+                onPress={() => setMode("friend")}
+              >
+                <Text
+                  style={[
+                    styles.modeText,
+                    mode === "friend" && styles.modeTextActive,
+                  ]}
+                >
+                  Friend
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
         <View
           style={[styles.infoBubbleWrap, { bottom: bubbleBottom }]}
           pointerEvents="auto"
@@ -526,12 +549,12 @@ export default function SwipeHome() {
               }}
               expandEnabled={isOpen}
               showHandle={isOpen}
+              onClose={() => setIsOpen(false)}
             />
           )}
         </View>
       </View>
 
-      {/* Swipe progress bar — only during swipe and only when NOT open */}
       {showSwipeBar && !isOpen && (
         <View
           style={[styles.holdBarWrap, { bottom: holdBarBottom }]}
@@ -541,7 +564,6 @@ export default function SwipeHome() {
         </View>
       )}
 
-      {/* Footer */}
       <View
         style={styles.footerFixed}
         onLayout={(e) => setFooterH(e.nativeEvent.layout.height)}
@@ -569,21 +591,85 @@ const styles = StyleSheet.create({
 
   overlay: { ...StyleSheet.absoluteFillObject },
 
+  topControls: {
+    position: "absolute",
+    top: 61,
+    right: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    zIndex: 10,
+  },
+
+  backButton: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 22,
+    height: 48,
+    minWidth: 48,
+    paddingHorizontal: 14,
+    marginRight: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  backButtonText: {
+    fontSize: 32,
+    lineHeight: 34,
+    fontWeight: "700",
+    color: "#002562",
+    transform: [{ translateX: -1 }],
+  },
+
+  modeToggleWrap: {
+    zIndex: 10,
+  },
+
+  modePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 22,
+    padding: 4,
+    height: 48,
+  },
+
+  modeOption: {
+    minWidth: 82,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  modeText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#7A869A",
+  },
+
+  modeTextActive: {
+    color: "#FFFFFF",
+  },
+
   loadingContainer: {
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 4,
   },
+
   loadingText: {
     color: "#333",
     fontSize: 14,
     fontWeight: "600",
   },
 
-  // bubble placement (bottom injected inline)
-  infoBubbleWrap: { position: "absolute", left: 13, right: 13 },
+  infoBubbleWrap: {
+    position: "absolute",
+    left: 13,
+    right: 13,
+    zIndex: 40,
+  },
 
-  // progress bar placement (bottom injected inline)
   holdBarWrap: { position: "absolute", left: 0, right: 0 },
 
   footerFixed: { position: "absolute", bottom: 0, left: 0, right: 0 },
