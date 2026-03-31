@@ -76,6 +76,28 @@ export default function ProfileScreen() {
         .eq("id", user.id)
         .maybeSingle();
       
+      // lifestyle join
+      const { data: lifestyleData } = await supabase
+        .from("user_lifestyles")
+        .select("lifestyles(name)")
+        .eq("user_id", user.id);
+
+      // love language join
+      const { data: loveLangData } = await supabase
+        .from("user_love_languages")
+        .select("love_languages(name)")
+        .eq("user_id", user.id);
+
+      // relationship type join
+      const { data: relTypeData } = await supabase
+        .from("user_relationship_types")
+        .select("relationship_types(name)")
+        .eq("user_id", user.id);
+
+      const lifestyle = lifestyleData?.map((l: any) => l.lifestyles.name) || [];
+      const loveLanguages = loveLangData?.map((l: any) => l.love_languages.name) || [];
+      const relTypes = relTypeData?.map((l: any) => l.relationship_types.name) || [];
+      
       if (error) {
         console.error("Error fetching profile:", error);
       } 
@@ -97,9 +119,9 @@ export default function ProfileScreen() {
           favoriteSpot: data.favorite_spot,
           playlist: data.playlist,
           instagram: data.instagram,
-          lifestyle: data.lifestyle || [],
-          lookingFor: data.relationship_type || [],
-          loveLanguages: data.love_language || [],
+          lifestyle: lifestyle,
+          lookingFor: relTypes,
+          loveLanguages: loveLanguages,
           gender: data.gender,
           photoUri: null, // add later
         });

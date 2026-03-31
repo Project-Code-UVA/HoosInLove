@@ -64,10 +64,44 @@ const SOCIAL_OPTIONS = ['Instagram', 'Discord', 'Snapchat'];
 
 export default function EditProfileScreen() {
   const navigation = useNavigation<any>();
-  // const profile = MOCK_CURRENT_USER; // get rid of later
-
-  // start of database stuff (NOT TESTED MAY BE BROKEN!!!)
   const [profile, setProfile] = useState<any>(null);
+
+  const [name, setName] = useState('');
+  const [age, setAge] = useState('');
+  const [firstImpression, setFirstImpression] = useState('');
+  const [pronouns, setPronouns] = useState('');
+  const [major, setMajor] = useState('');
+  const [bio, setBio] = useState('');
+  const [club, setClub] = useState('');
+  const [favoriteSpot, setFavoriteSpot] = useState('');
+  const [playlist, setPlaylist] = useState('');
+  const [username, setUsername] = useState('');
+
+  const [selectedYear, setSelectedYear] = useState<string[]>([]);
+
+  const [relationship, setRelationship] = useState<string[]>([]);
+
+  const [lifestyle, setLifestyle] = useState<string[]>([]);
+
+  const [loveLanguages, setLoveLanguages] = useState<string[]>([]);
+
+  const [gender, setGender] = useState<string | null>(null);
+
+  const [attractedTo, setAttractedTo] = useState<string[]>([]);
+
+  const [primarySocial, setPrimarySocial] = useState<string | null>('Instagram');
+
+  const toggleMulti = (
+    value: string,
+    list: string[],
+    setter: (value: string[]) => void
+  ) => {
+    if (list.includes(value)) {
+      setter(list.filter((item) => item !== value));
+    } else {
+      setter([...list, value]);
+    }
+  };
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -76,9 +110,19 @@ export default function EditProfileScreen() {
 
       const { data, error } = await supabase
         .from("user_profile")
-        .select("*")
+        .select(`
+          *,
+          user_lifestyles(lifestyles(*)),
+          user_love_languages(love_languages(*)),
+          user_relationship_types(relationship_types(*))
+        `)
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
+
+      if (error) {
+        console.error("profile fetch error:", error);
+        return;
+      }
       
       if (data) {
         setProfile(data);
@@ -93,74 +137,25 @@ export default function EditProfileScreen() {
         setFavoriteSpot(data.favorite_spot || "");
         setPlaylist(data.playlist || "");
         setUsername(data.instagram || "");
-
         setSelectedYear(data.school_year ? [data.school_year] : []);
-        setRelationship(data.relationship_type || []);
-        setLifestyle(data.lifestyle || []);
-        setLoveLanguages(data.love_language || []);
+
+        setRelationship(
+          data.user_relationship_types?.map((r: any) => r.relationship_types?.name).filter(Boolean) || []
+        );
+        setLifestyle(
+          data.user_lifestyles?.map((l: any) => l.lifestyles?.name).filter(Boolean) || []
+        );
+        setLoveLanguages(
+          data.user_love_languages?.map((l: any) => l.love_languages?.name).filter(Boolean) || []
+        );
         setGender(data.gender || null);
       }
     };
 
     loadProfile();
   }, []);
-  // end of database stuff (NOT TESTED MAY BE BROKEN!!!)
 
-  const [name, setName] = useState(profile.name || '');
-  const [age, setAge] = useState(profile.age ? String(profile.age) : '');
-  const [firstImpression, setFirstImpression] = useState(profile.quote || '');
-  const [pronouns, setPronouns] = useState(profile.pronouns || '');
-  const [major, setMajor] = useState(profile.major || '');
-  const [bio, setBio] = useState(profile.bio || '');
-  const [club, setClub] = useState(profile.favoriteClub || '');
-  const [favoriteSpot, setFavoriteSpot] = useState(profile.favoriteSpot || '');
-  const [playlist, setPlaylist] = useState(profile.playlist || '');
-  const [username, setUsername] = useState(profile.instagram || '');
-
-  const [selectedYear, setSelectedYear] = useState<string[]>(
-    profile.yearLabel ? [profile.yearLabel] : []
-  );
-
-  const [relationship, setRelationship] = useState<string[]>(
-    profile.lookingFor || []
-  );
-
-  const [lifestyle, setLifestyle] = useState<string[]>(
-    profile.lifestyle || []
-  );
-
-  const [loveLanguages, setLoveLanguages] = useState<string[]>(
-    profile.loveLanguages || []
-  );
-
-  const [gender, setGender] = useState<string | null>(
-    profile.gender || null
-  );
-
-  const [attractedTo, setAttractedTo] = useState<string[]>(
-    profile.attractedTo || []
-  );
-
-  const [primarySocial, setPrimarySocial] = useState<string | null>(
-    profile.primarySocial || 'Instagram'
-  );
-
-  const toggleMulti = (
-    value: string,
-    list: string[],
-    setter: (value: string[]) => void
-  ) => {
-    if (list.includes(value)) {
-      setter(list.filter((item) => item !== value));
-    } else {
-      setter([...list, value]);
-    }
-  };
-
-  // const handleSave = () => {
-  //   console.log('save profile changes');
-  // };
-  // start of database stuff (NOT TESTED MAY BE BROKEN!!!)
+  
   const handleSave = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -183,19 +178,43 @@ export default function EditProfileScreen() {
           playlist: playlist,
           instagram: username,
           gender: gender,
-          relationship_type: relationship,
-          lifestyle: lifestyle,
-          love_language: loveLanguages,
         })
         .eq("id", user.id);
-      
+
       if (error) {
-        console.error("Update failed:", error);
+        console.error("update failed:", error)
+        return;
       }
-      else {
-        console.log("Profile updated!");
-        navigation.replace("ViewProfile"); // go back to view profile screen
-      }
+
+      // delete old rows
+      await Promise.all([
+        supabase.from("user_lifestyles").delete().eq("user_id", user.id),
+        supabase.from("user_love_languages").delete().eq("user_id", user.id),
+        supabase.from("user_relationship_types").delete().eq("user_id", user.id),
+      ]);
+
+      // insert new rows with current state
+      const insertJoins = async (list: string[], table: string, mapTable: string, idKey: string) => {
+        if (list.length === 0) return;
+
+        const { data: mapData } = await supabase.from(mapTable).select('*');
+        const inserts = list.map((name) => {
+          const match = mapData?.find((m: any) => m.name === name);
+          return match ? { user_id: user.id, [idKey]: match[idKey] } : null;
+        }).filter(Boolean);
+
+        if (inserts.length > 0) {
+          await supabase.from(table).insert(inserts);
+        }
+      };
+
+      await insertJoins(lifestyle, "user_lifestyles", "lifestyles", "lifestyle_id");
+      await insertJoins(loveLanguages, "user_love_languages", "love_languages", "love_language_id");
+      await insertJoins(relationship, "user_relationship_types", "relationship_types", "relationship_type_id");
+      
+      console.log("profile updated!");
+      navigation.replace("ViewProfile");
+
     }
     catch (err) {
       console.error("Save error:", err);
