@@ -1,4 +1,4 @@
-import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import {
   Image,
@@ -57,7 +57,7 @@ export default function ProfileScreen() {
   // const profile = MOCK_CURRENT_USER; // get rid of later
   const [profile, setProfile] = useState<any>(null);
   const [menuVisible, setMenuVisible] = useState(false);
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<any>();
 
   const closeMenu = () => setMenuVisible(false);
   
@@ -65,17 +65,26 @@ export default function ProfileScreen() {
   useEffect(() => {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.error("No user logged in");
+        return;
+      }
 
       const { data, error } = await supabase
         .from("user_profile")
         .select("*")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error("Error fetching profile:", error);
       } 
+      if (!data) {
+        console.log("No profile found -> redirect to CreateProfile");
+        navigation.replace("CreateAccount");
+        return;
+      }
+
       else {
         setProfile({
           name: `${data.first_name ?? ""}`,
