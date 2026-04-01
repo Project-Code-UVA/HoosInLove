@@ -53,7 +53,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function AppNavigator() {
   return (
     <Stack.Navigator
-      initialRouteName="SwipeHome"
+      initialRouteName="BaseScreen"
       screenOptions={{
         headerShown: false,
         animation: 'none',
