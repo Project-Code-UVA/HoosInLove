@@ -1,11 +1,11 @@
 // src/screens/FinishProfile.tsx
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { supabase } from '../../../services/supabase';
 import PrettyBackground from '../../components/PrettyBackground';
 import { useOnboarding } from '../../context/OnboardingContext';
-import { supabase } from '../../../services/supabase';
 
 const FinishProfile: React.FC = () => {
   const { data: obData } = useOnboarding();
@@ -32,7 +32,7 @@ const FinishProfile: React.FC = () => {
         email: user.email,
         bio: bio, 
         gender: obData.gender, 
-        pronounds: obData.pronouns, // Deliberate match to schema spelling
+        pronouns: obData.pronouns, // Deliberate match to schema spelling
         school_year: obData.year[0] || 'Other', 
         age: parseInt(obData.age) || 18, 
         playlist: playlistLink, 

@@ -3,6 +3,7 @@ import React, { useEffect, useMemo } from "react";
 import { StyleSheet, View, Text, Image } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -12,12 +13,13 @@ type Props = {
   profile: {
     name: string;
     age: number;
-    yearLabel?: string; // e.g. "3rd Year"
+    yearLabel?: string;
     quote?: string;
-    photoUri?: string; // optional
+    photoUri?: string;
   };
   expandEnabled: boolean;
   showHandle?: boolean;
+  onClose?: () => void;
 };
 
 const NAVY = "#002562";
@@ -34,7 +36,10 @@ const QUOTE_LINES = 3;
 const QUOTE_LINE_HEIGHT = 21;
 const QUOTE_MAX_CHARS = 90;
 
-// smoother spring (less snappy / less bounce)
+const DOWN_TUG_MAX = 18;
+const DOWN_CLOSE_TRIGGER = 42;
+const COLLAPSE_EPSILON = 20;
+
 const BUBBLE_SPRING = {
   damping: 44,
   stiffness: 155,
@@ -44,16 +49,22 @@ const BUBBLE_SPRING = {
   restSpeedThreshold: 0.5,
 };
 
-// space under handle when expanded
+const TUG_SPRING = {
+  damping: 16,
+  stiffness: 220,
+};
+
 const TOP_PAD_WHEN_EXPANDED = 20;
 
 export default function InfoBubble({
   profile,
   expandEnabled,
   showHandle = true,
+  onClose,
 }: Props) {
   const h = useSharedValue(COLLAPSED_H);
   const startH = useSharedValue(COLLAPSED_H);
+  const pullDownY = useSharedValue(0);
 
   const clippedQuote = useMemo(() => {
     const q = (profile.quote ?? "").trim();
@@ -65,44 +76,68 @@ export default function InfoBubble({
   useEffect(() => {
     if (!expandEnabled) {
       h.value = withSpring(COLLAPSED_H, BUBBLE_SPRING);
+      pullDownY.value = withSpring(0, TUG_SPRING);
     }
   }, [expandEnabled]);
 
   const pan = Gesture.Pan()
     .enabled(expandEnabled)
+    .minDistance(4)
     .onBegin(() => {
       startH.value = h.value;
     })
     .onUpdate((e) => {
-      const next = startH.value + -e.translationY;
+      const isCollapsed = h.value <= COLLAPSED_H + COLLAPSE_EPSILON;
+
+      if (isCollapsed && e.translationY > 0) {
+        pullDownY.value = Math.min(e.translationY, DOWN_TUG_MAX);
+        h.value = COLLAPSED_H;
+        return;
+      }
+
+      pullDownY.value = 0;
+      const next = startH.value - e.translationY;
       h.value = Math.max(COLLAPSED_H, Math.min(EXPANDED_H, next));
     })
-    .onEnd(() => {
+    .onEnd((e) => {
+      const isCollapsed = h.value <= COLLAPSED_H + COLLAPSE_EPSILON;
+
+      if (isCollapsed && e.translationY > DOWN_CLOSE_TRIGGER) {
+        pullDownY.value = withSpring(0, TUG_SPRING);
+        if (onClose) {
+          runOnJS(onClose)();
+        }
+        return;
+      }
+
+      pullDownY.value = withSpring(0, TUG_SPRING);
+
       const mid = (COLLAPSED_H + EXPANDED_H) / 2;
       const snapToExpanded = h.value > mid;
       h.value = withSpring(
         snapToExpanded ? EXPANDED_H : COLLAPSED_H,
         BUBBLE_SPRING
       );
+    })
+    .onFinalize(() => {
+      pullDownY.value = withSpring(0, TUG_SPRING);
     });
 
-  const cardStyle = useAnimatedStyle(() => ({ height: h.value }));
+  const cardStyle = useAnimatedStyle(() => ({
+    height: h.value,
+    transform: [{ translateY: pullDownY.value }],
+  }));
 
-  // ✅ KEY: offset derived continuously from height (no abrupt jump), with safe inline clamp
   const contentStyle = useAnimatedStyle(() => {
-    // clamp01 inside the worklet
     const raw = (h.value - COLLAPSED_H) / (EXPANDED_H - COLLAPSED_H);
     const t = raw < 0 ? 0 : raw > 1 ? 1 : raw;
 
-    // optional easing so it moves less at the start of the drag
     const easedT = Math.pow(t, 1.25);
-
-    // negate the "center drift" when the card grows
     const expandedShift =
       -((EXPANDED_H - COLLAPSED_H) / 2) + TOP_PAD_WHEN_EXPANDED;
 
     return {
-      transform: [{ translateY: easedT * expandedShift }],
+      transform: [{ translateY: Math.round(easedT * expandedShift) }],
     };
   });
 
@@ -117,7 +152,6 @@ export default function InfoBubble({
         </View>
 
         <Animated.View style={[styles.row, contentStyle]}>
-          {/* Avatar + Year */}
           <View style={styles.leftCol}>
             <View style={styles.avatarOuter}>
               <View style={styles.avatarInner}>
@@ -141,14 +175,8 @@ export default function InfoBubble({
             )}
           </View>
 
-          {/* Text */}
           <View style={styles.textCol}>
-            <Text
-              style={styles.name}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.85}
-            >
+            <Text style={styles.name} numberOfLines={1}>
               {`${profile.name}, ${profile.age}`}
             </Text>
 
@@ -192,6 +220,7 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: "center",
   },
+
   handle: {
     width: HANDLE_W,
     height: HANDLE_H,
@@ -222,6 +251,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
   avatarInner: {
     width: 76,
     height: 76,
@@ -231,6 +261,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
   },
+
   avatarImg: { width: "100%", height: "100%" },
 
   avatarPlaceholder: {

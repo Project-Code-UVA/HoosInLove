@@ -1,4 +1,4 @@
-import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import {
   Image,
@@ -43,10 +43,10 @@ function getYearImage(yearLabel?: string) {
 
   const normalized = yearLabel.toLowerCase().trim();
 
-  if (normalized.includes("1st")) return firstYearImg;
-  if (normalized.includes("2nd")) return secondYearImg;
-  if (normalized.includes("3rd")) return thirdYearImg;
-  if (normalized.includes("4th")) return fourthYearImg;
+  if (normalized.includes("1st year")) return firstYearImg;
+  if (normalized.includes("2nd year")) return secondYearImg;
+  if (normalized.includes("3rd year")) return thirdYearImg;
+  if (normalized.includes("4th year")) return fourthYearImg;
   if (normalized.includes("grad")) return gradImg;
   if (normalized.includes("hoo")) return hooImg;
 
@@ -57,7 +57,7 @@ export default function ProfileScreen() {
   // const profile = MOCK_CURRENT_USER; // get rid of later
   const [profile, setProfile] = useState<any>(null);
   const [menuVisible, setMenuVisible] = useState(false);
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<any>();
 
   const closeMenu = () => setMenuVisible(false);
   
@@ -65,17 +65,48 @@ export default function ProfileScreen() {
   useEffect(() => {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.error("No user logged in");
+        return;
+      }
 
       const { data, error } = await supabase
         .from("user_profile")
         .select("*")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
+      
+      // lifestyle join
+      const { data: lifestyleData } = await supabase
+        .from("user_lifestyles")
+        .select("lifestyles(name)")
+        .eq("user_id", user.id);
+
+      // love language join
+      const { data: loveLangData } = await supabase
+        .from("user_love_languages")
+        .select("love_languages(name)")
+        .eq("user_id", user.id);
+
+      // relationship type join
+      const { data: relTypeData } = await supabase
+        .from("user_relationship_types")
+        .select("relationship_types(name)")
+        .eq("user_id", user.id);
+
+      const lifestyle = lifestyleData?.map((l: any) => l.lifestyles.name) || [];
+      const loveLanguages = loveLangData?.map((l: any) => l.love_languages.name) || [];
+      const relTypes = relTypeData?.map((l: any) => l.relationship_types.name) || [];
       
       if (error) {
         console.error("Error fetching profile:", error);
       } 
+      if (!data) {
+        console.log("No profile found -> redirect to CreateProfile");
+        navigation.replace("CreateAccount");
+        return;
+      }
+
       else {
         setProfile({
           name: `${data.first_name ?? ""}`,
@@ -88,9 +119,9 @@ export default function ProfileScreen() {
           favoriteSpot: data.favorite_spot,
           playlist: data.playlist,
           instagram: data.instagram,
-          lifestyle: data.lifestyle || [],
-          lookingFor: data.relationship_type || [],
-          loveLanguages: data.love_language || [],
+          lifestyle: lifestyle,
+          lookingFor: relTypes,
+          loveLanguages: loveLanguages,
           gender: data.gender,
           photoUri: null, // add later
         });

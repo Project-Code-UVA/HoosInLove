@@ -23,9 +23,9 @@ import InsideChat from './screens/ChatScreens/InsideChat';
 import SwipeHome from './screens/SwipePageScreens/SwipeHome';
 
 // PROFILE SCREEN
-import ProfileScreen from './screens/ProfilePageScreens/ProfileScreen';
-import EditProfileScreen from './screens/ProfilePageScreens/EditProfileScreen';
 import EditPhotosScreen from './screens/ProfilePageScreens/EditPhotosScreen';
+import EditProfileScreen from './screens/ProfilePageScreens/EditProfileScreen';
+import ProfileScreen from './screens/ProfilePageScreens/ProfileScreen';
 
 export type RootStackParamList = {
   SwipeHome: undefined;
