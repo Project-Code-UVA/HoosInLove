@@ -1,11 +1,7 @@
-// app/AppNavigator.tsx
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
-
 import BaseScreen from './screens/BaseScreen';
 import LoginScreen from './screens/LoginScreen';
-
-// NEW SCREENS — now inside CreateAnAccount Screens
 import AddPhotosScreen from './screens/CreateAnAccountScreens/AddPhotoScreen';
 import AppPoliciesNoticeScreen from './screens/CreateAnAccountScreens/AppPoliciesNoticeScreen';
 import CreateAccountScreen from './screens/CreateAnAccountScreens/CreateAccountScreen';
@@ -14,18 +10,12 @@ import DatingPreferences2 from './screens/CreateAnAccountScreens/DatingPreferenc
 import DatingPreferences3 from './screens/CreateAnAccountScreens/DatingPreferences3';
 import FinishProfile from './screens/CreateAnAccountScreens/FinishProfile';
 import VerifyEmailScreen from './screens/CreateAnAccountScreens/VerifyEmailScreen';
-
-// CHAT SCREENS
 import Chats from './screens/ChatScreens/Chats';
 import InsideChat from './screens/ChatScreens/InsideChat';
-
-// SWIPE PAGE SCREENS
 import SwipeHome from './screens/SwipePageScreens/SwipeHome';
-
-// PROFILE SCREEN
-import EditPhotosScreen from './screens/ProfilePageScreens/EditPhotosScreen';
-import EditProfileScreen from './screens/ProfilePageScreens/EditProfileScreen';
 import ProfileScreen from './screens/ProfilePageScreens/ProfileScreen';
+import EditProfileScreen from './screens/ProfilePageScreens/EditProfileScreen';
+import EditPhotosScreen from './screens/ProfilePageScreens/EditPhotosScreen';
 
 export type RootStackParamList = {
   SwipeHome: undefined;
@@ -39,10 +29,8 @@ export type RootStackParamList = {
   DatingPreferences2: undefined;
   DatingPreferences3: undefined;
   FinishProfile: undefined;
-
   Chats: undefined;
   InsideChat: { name: string };
-
   ViewProfile: { profile?: any | null };
   EditProfile: undefined;
   EditPhotos: undefined;
@@ -53,54 +41,26 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function AppNavigator() {
   return (
     <Stack.Navigator
-      initialRouteName="BaseScreen"
+      initialRouteName="LoginScreen" // Opens to login/signup options
       screenOptions={{
         headerShown: false,
-        animation: 'none',
+        // Standard OS transitions
       }}
     >
-      <Stack.Screen name="SwipeHome" component={SwipeHome} />
       <Stack.Screen name="BaseScreen" component={BaseScreen} />
+      <Stack.Screen name="SwipeHome" component={SwipeHome} />
       <Stack.Screen name="LoginScreen" component={LoginScreen} />
-
-      {/* PROFILE SCREEN */}
       <Stack.Screen name="ViewProfile" component={ProfileScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="EditPhotos" component={EditPhotosScreen} />
-
-      {/* CREATE ACCOUNT FLOW */}
       <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
-      <Stack.Screen
-        name="VerifyEmail"
-        component={VerifyEmailScreen}
-        options={{
-          presentation: 'modal',
-        }}
-      />
-
-      {/* APP POLICIES & ADD PHOTOS */}
-      <Stack.Screen
-        name="AppPoliciesNotice"
-        component={AppPoliciesNoticeScreen}
-      />
+      <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
+      <Stack.Screen name="AppPoliciesNotice" component={AppPoliciesNoticeScreen} />
       <Stack.Screen name="AddPhotos" component={AddPhotosScreen} />
-
-      {/* DATING PREFERENCES & FINISH PROFILE */}
-      <Stack.Screen
-        name="DatingPreferences1"
-        component={DatingPreferences1}
-      />
-      <Stack.Screen
-        name="DatingPreferences2"
-        component={DatingPreferences2}
-      />
-      <Stack.Screen
-        name="DatingPreferences3"
-        component={DatingPreferences3}
-      />
+      <Stack.Screen name="DatingPreferences1" component={DatingPreferences1} />
+      <Stack.Screen name="DatingPreferences2" component={DatingPreferences2} />
+      <Stack.Screen name="DatingPreferences3" component={DatingPreferences3} />
       <Stack.Screen name="FinishProfile" component={FinishProfile} />
-
-      {/* CHAT */}
       <Stack.Screen name="Chats" component={Chats} />
       <Stack.Screen name="InsideChat" component={InsideChat} />
     </Stack.Navigator>
